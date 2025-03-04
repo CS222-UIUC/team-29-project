@@ -1,0 +1,23 @@
+[tool.poetry]
+name = "threadflow-backend"
+version = "0.1.0"
+description = "Backend for ThreadFlow chat application"
+authors = ["tthreadflow@gmail.com"]
+
+[tool.poetry.dependencies]
+python = ">=3.10,<3.11"
+fastapi = "*"
+uvicorn = "*"
+motor = "*"
+pydantic = "*"
+python-jose = "*"
+google-cloud-secret-manager = "*"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "*"
+black = "*"
+isort = "*"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"

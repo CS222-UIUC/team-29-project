@@ -1,0 +1,39 @@
+services:
+  # Backend service remains unchanged
+  backend:
+    build: ./backend
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app
+    environment:
+      - MONGODB_URI=mongodb://mongo:27017/threadflow
+    depends_on:
+      - mongo
+
+  # Update frontend service
+  frontend:
+    build: 
+      context: ./frontend
+      target: development
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:8000
+    stdin_open: true
+    # Using the default npm run dev which already includes turbopack
+    command: npm run dev -- --hostname 0.0.0.0
+
+  # MongoDB service remains unchanged
+  mongo:
+    image: mongo:5.0
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+
+volumes:
+  mongo-data:

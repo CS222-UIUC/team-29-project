@@ -1,0 +1,40 @@
+steps:
+  # Build backend image
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['build', '-t', 'us-central1-docker.pkg.dev/${PROJECT_ID}/threadflow-repo/backend:${SHORT_SHA}', './backend']
+    id: 'build-backend'
+
+  # Push backend image
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', 'us-central1-docker.pkg.dev/${PROJECT_ID}/threadflow-repo/backend:${SHORT_SHA}']
+    id: 'push-backend'
+
+  # Build frontend image
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['build', '-t', 'us-central1-docker.pkg.dev/${PROJECT_ID}/threadflow-repo/frontend:${SHORT_SHA}', '--target', 'production', './frontend']
+    id: 'build-frontend'
+
+  # Push frontend image
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', 'us-central1-docker.pkg.dev/${PROJECT_ID}/threadflow-repo/frontend:${SHORT_SHA}']
+    id: 'push-frontend'
+
+  # Create a file with deployment status
+  - name: 'gcr.io/cloud-builders/gcloud'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        echo "Images built and pushed to Artifact Registry:"
+        echo "Backend: us-central1-docker.pkg.dev/${PROJECT_ID}/threadflow-repo/backend:${SHORT_SHA}"
+        echo "Frontend: us-central1-docker.pkg.dev/${PROJECT_ID}/threadflow-repo/frontend:${SHORT_SHA}"
+        echo ""
+        echo "Ready for deployment. To deploy, run:"
+        echo "gcloud run deploy threadflow-backend --image=us-central1-docker.pkg.dev/${PROJECT_ID}/threadflow-repo/backend:${SHORT_SHA} --region=us-central1"
+        echo "gcloud run deploy threadflow-frontend --image=us-central1-docker.pkg.dev/${PROJECT_ID}/threadflow-repo/frontend:${SHORT_SHA} --region=us-central1"
+
+images:
+  - 'us-central1-docker.pkg.dev/${PROJECT_ID}/threadflow-repo/backend:${SHORT_SHA}'
+  - 'us-central1-docker.pkg.dev/${PROJECT_ID}/threadflow-repo/frontend:${SHORT_SHA}'
+
+timeout: '1200s'

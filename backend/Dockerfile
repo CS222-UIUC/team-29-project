@@ -7,12 +7,14 @@ RUN pip install poetry
 
 # Copy poetry configuration
 COPY pyproject.toml poetry.lock* ./
-COPY requirements.txt .
-# Copy requirements configuration
-RUN pip install --no-cache-dir -r requirements.txt
 
 # Configure poetry to not use a virtual environment
 RUN poetry config virtualenvs.create false
+
+#Gets Google generative AI and other dependencies for testing
+RUN pip install google-generativeai
+RUN pip install dotenv
+RUN pip install asyncio
 
 # Install dependencies based on environment
 ARG ENVIRONMENT=development

@@ -11,11 +11,6 @@ COPY pyproject.toml poetry.lock* ./
 # Configure poetry to not use a virtual environment
 RUN poetry config virtualenvs.create false
 
-#Gets Google generative AI and other dependencies for testing
-RUN pip install google-generativeai
-RUN pip install dotenv
-RUN pip install asyncio
-
 # Install dependencies based on environment
 ARG ENVIRONMENT=development
 RUN if [ "$ENVIRONMENT" = "production" ] ; then poetry install --no-dev --no-root ; else poetry install --no-root ; fi

@@ -2,7 +2,7 @@
 name = "threadflow-backend"
 version = "0.1.0"
 description = "Backend for ThreadFlow chat application"
-authors = ["Thread Flow tthreadflow@gmail.com"]
+authors = ["Thread tthreadflow@gmail.com"]
 packages = [
     {include = "app"}
 ]

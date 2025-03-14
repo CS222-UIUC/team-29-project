@@ -5,10 +5,13 @@ Functions:
 - test_health(): #Test API health
 - test_chat_basic(): Baseline test for chatbot
 """
-from fastapi.testclient import TestClient
-from .main import app
 
-client  = TestClient(app)
+from fastapi.testclient import TestClient
+
+from app.main import app
+
+client = TestClient(app)
+
 
 def test_root_status():
     """Test API status"""
@@ -16,11 +19,13 @@ def test_root_status():
     assert response.status_code == 200
     assert response.json() == {"message": "Welcome to ThreadFlow API"}
 
+
 def test_health():
     """Test health"""
     response = client.get("/health")
     assert response.status_code == 200
     assert response.json() == {"status": "healthy"}
+
 
 def test_chat_basic():
     """Baseline test for chatbot"""

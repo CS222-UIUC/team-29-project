@@ -12,9 +12,13 @@ const nextConfig: NextConfig = {
       },
     ];
   },
+  // Enable React strict mode for better development
   reactStrictMode: true,
+  // Configure experimental features (without turbo)
   experimental: {
+    // Removed turbo: true as it's now handled via CLI
   },
+  // Images domains if you need external images
   images: {
     domains: ['localhost'],
   }

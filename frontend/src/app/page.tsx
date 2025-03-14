@@ -16,7 +16,7 @@ export default function Home() {
         setStatusClass("text-green-500 font-bold");
       })
       .catch(error => {
-        setApiStatus("Offline" + (error ? `: ${error.message}` : ""));
+        setApiStatus("Offline");
         setStatusClass("text-red-500 font-bold");
       });
   }, []);

@@ -15,6 +15,8 @@ motor = "*"
 pydantic = "*"
 python-jose = "*"
 google-cloud-secret-manager = "*"
+google-generativeai = "*"
+python-dotenv = "*"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "*"
@@ -22,6 +24,7 @@ black = "*"
 isort = "*"
 flake8 = "*"
 pylint = "*"
+httpx = "*"
 
 [tool.black]
 line-length = 150

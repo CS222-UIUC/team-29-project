@@ -12,9 +12,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 @app.get("/")
 async def root():
     return {"message": "Welcome to ThreadFlow API"}
+
 
 @app.get("/health")
 async def health_check():

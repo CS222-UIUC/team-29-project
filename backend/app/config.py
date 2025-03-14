@@ -1,5 +1,7 @@
 import os
+
 from google.cloud import secretmanager
+
 
 def get_secret(secret_id, default_value=""):
     """Get a secret from Secret Manager or use default/env value"""
@@ -18,6 +20,7 @@ def get_secret(secret_id, default_value=""):
     else:
         # In development, use environment variables
         return os.environ.get(secret_id.replace("-", "_").upper(), default_value)
+
 
 # Application settings
 MONGODB_URI = get_secret("mongodb-uri", "mongodb://mongo:27017/threadflow")

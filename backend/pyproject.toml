@@ -3,6 +3,9 @@ name = "threadflow-backend"
 version = "0.1.0"
 description = "Backend for ThreadFlow chat application"
 authors = ["tthreadflow@gmail.com"]
+packages = [
+    {include = "app"}
+]
 
 [tool.poetry.dependencies]
 python = ">=3.10,<3.11"
@@ -17,6 +20,28 @@ google-cloud-secret-manager = "*"
 pytest = "*"
 black = "*"
 isort = "*"
+flake8 = "*"
+pylint = "*"
+
+[tool.black]
+line-length = 150
+target-version = ["py310"]
+include = '\.pyi?$'
+
+[tool.isort]
+profile = "black"
+line_length = 150
+
+[tool.pylint.messages_control]
+disable = [
+    "too-few-public-methods",
+    "missing-module-docstring",
+    "missing-function-docstring",
+    "broad-exception-caught"
+]
+
+[tool.pylint.format]
+max-line-length = "150"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

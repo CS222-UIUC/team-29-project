@@ -43,15 +43,15 @@ export default function Chat() {
       
       const data = await result.json();
       setResponse(data.response);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("API Error:", error);
       
-      if (error.name === 'AbortError') {
+      if (error instanceof Error && error.name === 'AbortError') {
         setResponse("Request timed out. The API might be taking too long to respond.");
         setError("Request timed out after 30 seconds");
       } else {
         setResponse("Error connecting to the server. Please try again.");
-        setError(String(error));
+        setError(error instanceof Error ? error.message : String(error));
       }
     } finally {
       setIsLoading(false);

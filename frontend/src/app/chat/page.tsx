@@ -3,35 +3,87 @@
 import Link from "next/link";
 import { useState, useEffect } from "react";
 
+interface Message {
+  id: string;
+  content: string;
+  role: string;
+  timestamp: string;
+}
+
+interface Thread {
+  id: string;
+  messages: Message[];
+  parent_thread_id?: string;
+  created_at: string;
+  updated_at: string;
+}
+
 export default function Chat() {
   const [userInput, setUserInput] = useState<string>("");
-  const [response, setResponse] = useState<string>("");
+  const [currentThread, setCurrentThread] = useState<Thread | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    console.log("Chat page mounted");
+    // Create a new thread when the component mounts
+    createNewThread();
   }, []);
+
+  const createNewThread = async () => {
+    try {
+      const response = await fetch('http://localhost:8000/threads', {
+        method: 'POST',
+      });
+      if (!response.ok) throw new Error('Failed to create thread');
+      const thread = await response.json();
+      setCurrentThread(thread);
+    } catch (error) {
+      console.error('Error creating thread:', error);
+      setError('Failed to create new thread');
+    }
+  };
+
+  const branchThread = async (messageId: string) => {
+    if (!currentThread) return;
+    
+    try {
+      const response = await fetch(`http://localhost:8000/threads/${currentThread.id}/branch?message_id=${messageId}`, {
+        method: 'POST',
+      });
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || 'Failed to branch thread');
+      }
+      const newThread = await response.json();
+      setCurrentThread(newThread);
+      setUserInput(''); // Clear input when switching threads
+    } catch (error) {
+      console.error('Error branching thread:', error);
+      setError(error instanceof Error ? error.message : 'Failed to branch thread');
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!userInput.trim()) return;
+    if (!userInput.trim() || !currentThread) return;
     
     setIsLoading(true);
     setError(null);
     
     try {
-      // Add a timeout to the fetch request
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+      const timeoutId = setTimeout(() => controller.abort(), 30000);
       
       const result = await fetch('http://localhost:8000/chat', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ message: userInput }),
+        body: JSON.stringify({ 
+          message: userInput,
+          thread_id: currentThread.id 
+        }),
         signal: controller.signal
       });
       
@@ -42,15 +94,26 @@ export default function Chat() {
       }
       
       const data = await result.json();
-      setResponse(data.response);
+      
+      // Update the current thread with the new messages
+      if (currentThread) {
+        const updatedThread = {
+          ...currentThread,
+          messages: [...currentThread.messages, 
+            { id: data.message_id, content: userInput, role: 'user', timestamp: new Date().toISOString() },
+            { id: data.response_id, content: data.response, role: 'assistant', timestamp: new Date().toISOString() }
+          ]
+        };
+        setCurrentThread(updatedThread);
+      }
+      
+      setUserInput('');
     } catch (error: any) {
       console.error("API Error:", error);
       
       if (error.name === 'AbortError') {
-        setResponse("Request timed out. The API might be taking too long to respond.");
         setError("Request timed out after 30 seconds");
       } else {
-        setResponse("Error connecting to the server. Please try again.");
         setError(String(error));
       }
     } finally {
@@ -64,7 +127,7 @@ export default function Chat() {
         <Link href="/" className="text-2xl font-bold">ThreadFlow</Link>
       </header>
       
-      <main className="flex-1 flex flex-col max-w-2xl mx-auto w-full">
+      <main className="flex-1 flex flex-col max-w-4xl mx-auto w-full">
         <h1 className="text-3xl font-bold mb-6">Chat Page</h1>
         
         {error && (
@@ -73,16 +136,30 @@ export default function Chat() {
           </div>
         )}
         
-        <div className="bg-black/[.05] dark:bg-white/[.06] rounded-lg p-6 mb-6 min-h-[200px] flex items-start">
-          {isLoading ? (
-            <div className="flex items-center justify-center w-full">
-              <p className="text-gray-500">Getting response...</p>
+        <div className="flex-1 overflow-y-auto mb-6">
+          {currentThread?.messages.map((message, index) => (
+            <div 
+              key={message.id} 
+              className={`mb-4 p-4 rounded-lg ${
+                message.role === 'user' 
+                  ? 'bg-blue-100 dark:bg-blue-900 ml-auto max-w-[80%]' 
+                  : 'bg-gray-100 dark:bg-gray-800 mr-auto max-w-[80%]'
+              }`}
+            >
+              <div className="flex justify-between items-start mb-2">
+                <span className="font-semibold">
+                  {message.role === 'user' ? 'You' : 'Assistant'}
+                </span>
+                <button
+                  onClick={() => branchThread(message.id)}
+                  className="text-sm text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-200"
+                >
+                  Branch from here
+                </button>
+              </div>
+              <p className="whitespace-pre-wrap">{message.content}</p>
             </div>
-          ) : response ? (
-            <p className="whitespace-pre-wrap">{response}</p>
-          ) : (
-            <p className="text-gray-500">Your response will appear here</p>
-          )}
+          ))}
         </div>
         
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">

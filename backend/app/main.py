@@ -18,7 +18,9 @@ load_dotenv()
 # Get API key from environment variable
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 if not GEMINI_API_KEY:
-    print("Warning: GEMINI_API_KEY not found in environment variables. API calls will fail.")
+    print(
+        "Warning: GEMINI_API_KEY not found in environment variables. API calls will fail."
+    )
 
 # Configure the Gemini API
 genai.configure(api_key=GEMINI_API_KEY)
@@ -72,7 +74,9 @@ async def chat(message: ChatMessage):
         # Wrap the synchronous API call in an executor to prevent blocking
         # The Google GenerativeAI library is synchronous, so we need to run it in a thread pool
         loop = asyncio.get_event_loop()
-        response = await loop.run_in_executor(None, lambda: model.generate_content(message.message))
+        response = await loop.run_in_executor(
+            None, lambda: model.generate_content(message.message)
+        )
         # Extract the text from the response
         response_text = response.text
         return {"response": response_text}

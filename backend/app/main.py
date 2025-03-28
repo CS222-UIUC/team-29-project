@@ -41,6 +41,14 @@ class ChatMessage(BaseModel):
     provider: str = DEFAULT_MODEL_PROVIDER
     model_id: str = DEFAULT_MODEL_ID
 
+    @property
+    def get_message(self):
+        return self.message
+
+    @property
+    def get_provider(self):
+        return self.provider
+
 
 @app.get("/")
 async def root() -> dict:

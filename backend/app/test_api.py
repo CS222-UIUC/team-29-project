@@ -64,8 +64,9 @@ def test_models_endpoint():
 def test_chat_with_model_params():
     """Test chat with model parameters"""
     # Test with specified model parameters
-    response = client.post("/chat",
-            json={"message": "Hi!", "provider": "google",
-                  "model_id": "gemini-1.5-pro"})
+    response = client.post(
+        "/chat",
+        json={"message": "Hi!", "provider": "google", "model_id": "gemini-1.5-pro"},
+    )
     assert response.status_code == 200
     assert "response" in response.json()

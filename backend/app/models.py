@@ -46,7 +46,7 @@ def get_openai_client() -> Optional[openai.OpenAI]:
 async def generate_response(
     message: str,
     provider: str = DEFAULT_MODEL_PROVIDER,
-    model_id: str = DEFAULT_MODEL_ID
+    model_id: str = DEFAULT_MODEL_ID,
 ) -> str:
     """
     Generate a response using the specified model provider and model ID.
@@ -67,29 +67,26 @@ async def generate_response(
         provider_keys = {
             "google": GEMINI_API_KEY,
             "anthropic": ANTHROPIC_API_KEY,
-            "openai": OPENAI_API_KEY
+            "openai": OPENAI_API_KEY,
         }
 
         # Map of providers to their generator functions
         provider_functions = {
             "google": _generate_with_gemini,
             "anthropic": _generate_with_anthropic,
-            "openai": _generate_with_openai
+            "openai": _generate_with_openai,
         }
 
         # Validate provider exists
         if provider not in MODEL_CONFIGS:
-            raise HTTPException(
-                status_code=400,
-                detail=f"Invalid provider: {provider}"
-            )
+            raise HTTPException(status_code=400, detail=f"Invalid provider: {provider}")
 
         # Validate model exists for provider
         valid_models = [model["id"] for model in MODEL_CONFIGS[provider]]
         if model_id not in valid_models:
             raise HTTPException(
                 status_code=400,
-                detail=f"Invalid model ID for provider {provider}: {model_id}"
+                detail=f"Invalid model ID for provider {provider}: {model_id}",
             )
 
         # Check if any API keys are configured
@@ -111,8 +108,7 @@ async def generate_response(
 
     except Exception as exc:
         raise HTTPException(
-            status_code=500,
-            detail=f"Error generating response: {str(exc)}"
+            status_code=500, detail=f"Error generating response: {str(exc)}"
         ) from exc
 
 
@@ -143,15 +139,13 @@ async def _generate_with_gemini(message: str, model_id: str) -> str:
         # Run in executor to prevent blocking
         loop = asyncio.get_event_loop()
         response = await loop.run_in_executor(
-            None,
-            lambda: model.generate_content(message)
+            None, lambda: model.generate_content(message)
         )
 
         return response.text
     except Exception as exc:
         raise HTTPException(
-            status_code=500,
-            detail=f"Error with Gemini API: {str(exc)}"
+            status_code=500, detail=f"Error with Gemini API: {str(exc)}"
         ) from exc
 
 
@@ -184,15 +178,14 @@ async def _generate_with_anthropic(message: str, model_id: str) -> str:
             lambda: client.messages.create(
                 model=model_id,
                 max_tokens=1024,
-                messages=[{"role": "user", "content": message}]
-            )
+                messages=[{"role": "user", "content": message}],
+            ),
         )
 
         return response.content[0].text
     except Exception as exc:
         raise HTTPException(
-            status_code=500,
-            detail=f"Error with Anthropic API: {str(exc)}"
+            status_code=500, detail=f"Error with Anthropic API: {str(exc)}"
         ) from exc
 
 
@@ -225,15 +218,14 @@ async def _generate_with_openai(message: str, model_id: str) -> str:
             lambda: client.chat.completions.create(
                 model=model_id,
                 messages=[{"role": "user", "content": message}],
-                max_tokens=1024
-            )
+                max_tokens=1024,
+            ),
         )
 
         return response.choices[0].message.content
     except Exception as exc:
         raise HTTPException(
-            status_code=500,
-            detail=f"Error with OpenAI API: {str(exc)}"
+            status_code=500, detail=f"Error with OpenAI API: {str(exc)}"
         ) from exc
 
 
@@ -247,15 +239,15 @@ def get_available_models() -> Dict:
     available_models = {
         "google": {
             "available": bool(GEMINI_API_KEY),
-            "models": MODEL_CONFIGS["google"]
+            "models": MODEL_CONFIGS["google"],
         },
         "anthropic": {
             "available": bool(ANTHROPIC_API_KEY),
-            "models": MODEL_CONFIGS["anthropic"]
+            "models": MODEL_CONFIGS["anthropic"],
         },
         "openai": {
             "available": bool(OPENAI_API_KEY),
-            "models": MODEL_CONFIGS["openai"]
+            "models": MODEL_CONFIGS["openai"],
         },
     }
 

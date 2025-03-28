@@ -1,4 +1,5 @@
 import os
+from typing import Dict, List
 
 from google.cloud import secretmanager
 
@@ -25,3 +26,34 @@ def get_secret(secret_id, default_value=""):
 # Application settings
 MONGODB_URI = get_secret("mongodb-uri", "mongodb://mongo:27017/threadflow")
 JWT_SECRET = get_secret("jwt-secret", "dev_secret_key")
+
+# API keys for different model providers
+GEMINI_API_KEY = get_secret("gemini-api-key", "")
+OPENAI_API_KEY = get_secret("openai-api-key", "")
+ANTHROPIC_API_KEY = get_secret("anthropic-api-key", "")
+
+# Model configurations
+MODEL_CONFIGS: Dict[str, List[Dict[str, str]]] = {
+    "google": [
+        {
+            "id": "gemini-2.5-pro-exp-03-25",
+            "name": "Gemini 2.5 Pro Experimental",
+            "description": "Latest experimental Gemini model with advanced capabilities",
+        },
+        {"id": "gemini-2.0-flash", "name": "Gemini 2.0 Flash", "description": "Fast, efficient model with strong performance"},
+        {"id": "gemini-2.0-flash-lite", "name": "Gemini 2.0 Flash Lite", "description": "Lightweight model optimized for speed and efficiency"},
+        {"id": "gemini-1.5-pro", "name": "Gemini 1.5 Pro", "description": "Reliable model for complex tasks"},
+    ],
+    "anthropic": [
+        {"id": "claude-3-7-sonnet-20250219", "name": "Claude 3.7 Sonnet", "description": "Latest and most capable Claude Sonnet model"},
+        {"id": "claude-3-5-sonnet-20241022", "name": "Claude 3.5 Sonnet v2", "description": "Balanced performance and cost Sonnet model"},
+        {"id": "claude-3-5-haiku-20241022", "name": "Claude 3.5 Haiku", "description": "Fast, efficient responses with Haiku model"},
+    ],
+    "openai": [
+        {"id": "gpt-4o", "name": "GPT-4o", "description": "OpenAI's latest multimodal model with optimal performance"},
+    ],
+}
+
+# Default model to use if none specified
+DEFAULT_MODEL_PROVIDER = "google"
+DEFAULT_MODEL_ID = "gemini-2.5-pro-exp-03-25"

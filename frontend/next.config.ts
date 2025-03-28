@@ -8,7 +8,7 @@ const nextConfig: NextConfig = {
         source: '/api/:path*',
         destination: process.env.NODE_ENV === 'production' 
           ? 'https://api.threadflow.app/:path*'  // Production API
-          : 'http://localhost:8000/:path*',      // Development API
+          : 'http://backend:8000/:path*',      // Development API
       },
     ];
   },

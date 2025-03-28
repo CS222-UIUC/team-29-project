@@ -1,17 +1,25 @@
 services:
-  # Backend service remains unchanged
+  # Backend service with updated environment variables
   backend:
     build: ./backend
     ports:
       - "8000:8000"
     volumes:
       - ./backend:/app
+      - /app/node_modules
     environment:
       - MONGODB_URI=mongodb://mongo:27017/threadflow
+      # Model provider API keys
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      - JWT_SECRET=development_secret_key
+    env_file:
+      - ./backend/.env
     depends_on:
       - mongo
 
-  # Update frontend service
+  # Frontend service
   frontend:
     build: 
       context: ./frontend
@@ -22,7 +30,7 @@ services:
       - ./frontend:/app
       - /app/node_modules
     environment:
-      - NEXT_PUBLIC_API_URL=http://localhost:8000
+      - NEXT_PUBLIC_API_URL=http://backend:8000
     stdin_open: true
     # Using the default npm run dev which already includes turbopack
     command: npm run dev -- --hostname 0.0.0.0

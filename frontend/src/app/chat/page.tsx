@@ -41,7 +41,7 @@ export default function Chat() {
         setModels(data);
         
         // Set first available provider and model as default
-        for (const [provider, config] of Object.entries(data)) {
+        for (const [provider, config] of Object.entries(data) as [string, ProviderConfig][]) {
           if (config.available && config.models.length > 0) {
             setSelectedProvider(provider);
             setSelectedModelId(config.models[0].id);

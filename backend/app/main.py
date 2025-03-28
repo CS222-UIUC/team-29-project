@@ -43,10 +43,12 @@ class ChatMessage(BaseModel):
 
     @property
     def get_message(self):
+        """Get message text"""
         return self.message
 
     @property
     def get_provider(self):
+        """Get chat provider"""
         return self.provider
 
 

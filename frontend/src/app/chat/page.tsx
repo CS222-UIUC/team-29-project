@@ -2,21 +2,8 @@
 
 import Link from "next/link";
 import { useState, useEffect } from "react";
-
-type ModelConfig = {
-  id: string;
-  name: string;
-  description: string;
-};
-
-type ProviderConfig = {
-  available: boolean;
-  models: ModelConfig[];
-};
-
-type ModelsResponse = {
-  [provider: string]: ProviderConfig;
-};
+import { ModelsResponse, ProviderConfig } from "@/types/models";
+import { findBestModelForProvider, getModelDescription, isProviderAvailable } from "@/utils/modelUtils";
 
 export default function Chat() {
   const [userInput, setUserInput] = useState<string>("");
@@ -63,19 +50,10 @@ export default function Chat() {
     const provider = e.target.value;
     setSelectedProvider(provider);
     
-    // Reset model selection to first model in the new provider
-    if (models && models[provider]?.models.length > 0) {
-      // Default to the most capable model for each provider
-      if (provider === "anthropic") {
-        // Find Claude 3.7 Sonnet model
-        const claude37 = models[provider].models.find(m => m.id === "claude-3-7-sonnet-20250219");
-        if (claude37) {
-          setSelectedModelId(claude37.id);
-          return;
-        }
-      }
-      // Default to first model if specific model not found
-      setSelectedModelId(models[provider].models[0].id);
+    // Find the best model for this provider
+    const bestModelId = findBestModelForProvider(models, provider);
+    if (bestModelId) {
+      setSelectedModelId(bestModelId);
     }
   };
 
@@ -172,13 +150,13 @@ export default function Chat() {
               {!models ? (
                 <option>Loading...</option>
               ) : (
-                Object.entries(models).map(([provider, config]) => (
+                Object.keys(models).map(provider => (
                   <option 
                     key={provider} 
                     value={provider}
-                    disabled={!config.available}
+                    disabled={!isProviderAvailable(models, provider)}
                   >
-                    {provider.charAt(0).toUpperCase() + provider.slice(1)} {!config.available && "(API key required)"}
+                    {provider.charAt(0).toUpperCase() + provider.slice(1)} {!isProviderAvailable(models, provider) && "(API key required)"}
                   </option>
                 ))
               )}
@@ -207,11 +185,9 @@ export default function Chat() {
           </div>
         </div>
         
-        {selectedProvider && selectedModelId && models && models[selectedProvider]?.models && (
+        {selectedProvider && selectedModelId && models && (
           <div className="mb-4 text-sm text-gray-500">
-            <p>
-              {models[selectedProvider]?.models.find(m => m.id === selectedModelId)?.description || ""}
-            </p>
+            <p>{getModelDescription(models, selectedProvider, selectedModelId)}</p>
           </div>
         )}
         

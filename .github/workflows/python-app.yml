@@ -56,5 +56,9 @@ jobs:
         poetry run pylint $(git ls-files '*.py')
     
     - name: Test with pytest
+      env:
+        OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
       working-directory: ./backend
       run: poetry run pytest

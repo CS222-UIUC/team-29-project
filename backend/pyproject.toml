@@ -17,6 +17,8 @@ python-jose = "*"
 google-cloud-secret-manager = "*"
 google-generativeai = "*"
 python-dotenv = "*"
+anthropic = "*"
+openai = "*"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "*"

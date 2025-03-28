@@ -3,28 +3,16 @@ This module provides utility for the backend
 This encases the main function for the backend
 """
 
-import asyncio
-import os
-
-import google.generativeai as genai
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
+from app.config import DEFAULT_MODEL_ID, DEFAULT_MODEL_PROVIDER
+from app.models import generate_response, get_available_models
+
 # Load environment variables
 load_dotenv()
-
-# Get API key from environment variable
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-if not GEMINI_API_KEY:
-    print("Warning: GEMINI_API_KEY not found in environment variables. API calls will fail.")
-
-# Configure the Gemini API
-genai.configure(api_key=GEMINI_API_KEY)
-
-# Initialize the model
-model = genai.GenerativeModel("gemini-1.5-pro")
 
 app = FastAPI(title="ThreadFlow API")
 
@@ -45,6 +33,8 @@ class ChatMessage(BaseModel):
     """
 
     message: str
+    provider: str = DEFAULT_MODEL_PROVIDER
+    model_id: str = DEFAULT_MODEL_ID
 
 
 @app.get("/")
@@ -59,28 +49,21 @@ async def health_check():
     return {"status": "healthy"}
 
 
+@app.get("/models")
+async def models():
+    """Returns available models and their configurations"""
+    return get_available_models()
+
+
 @app.post("/chat")
 async def chat(message: ChatMessage):
     """Asynchronous method for the chat interface"""
     try:
-        # Check if API key is configured
-        if not GEMINI_API_KEY:
-            return {
-                "response": """API key not configured.
-                 Please set GEMINI_API_KEY in your environment variables."""
-            }
-        # Wrap the synchronous API call in an executor to prevent blocking
-        # The Google GenerativeAI library is synchronous, so we need to run it in a thread pool
-        loop = asyncio.get_event_loop()
-        response = await loop.run_in_executor(None, lambda: model.generate_content(message.message))
-        # Extract the text from the response
-        response_text = response.text
+        # Generate response using the specified provider and model
+        response_text = await generate_response(message=message.message, provider=message.provider, model_id=message.model_id)
         return {"response": response_text}
     except HTTPException as excp_err:
         # Log the error
-        print(f"Error calling Gemini API: {str(excp_err)}")
+        print(f"Error calling AI API: {str(excp_err)}")
         # Return a user-friendly error message
-        return {
-            "response": f"""Sorry, I encountered an error while
-              processing your request: {str(excp_err)}"""
-        }
+        return {"response": f"Sorry, I encountered an error when you requested: {str(excp_err)}"}

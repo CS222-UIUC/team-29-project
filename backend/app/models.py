@@ -10,14 +10,9 @@ import google.generativeai as genai
 import openai
 from fastapi import HTTPException
 
-from app.config import (
-    ANTHROPIC_API_KEY,
-    DEFAULT_MODEL_ID,
-    DEFAULT_MODEL_PROVIDER,
-    GEMINI_API_KEY,
-    MODEL_CONFIGS,
-    OPENAI_API_KEY,
-)
+from app.config import (ANTHROPIC_API_KEY, DEFAULT_MODEL_ID,
+                        DEFAULT_MODEL_PROVIDER, GEMINI_API_KEY, MODEL_CONFIGS,
+                        OPENAI_API_KEY)
 
 # Configure API clients
 genai.configure(api_key=GEMINI_API_KEY)

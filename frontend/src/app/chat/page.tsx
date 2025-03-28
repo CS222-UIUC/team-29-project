@@ -2,16 +2,64 @@
 
 import Link from "next/link";
 import { useState, useEffect } from "react";
+import { ModelsResponse, ProviderConfig } from "@/types/models";
+import { findBestModelForProvider, getModelDescription, isProviderAvailable } from "@/utils/modelUtils";
 
 export default function Chat() {
   const [userInput, setUserInput] = useState<string>("");
   const [response, setResponse] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const [selectedProvider, setSelectedProvider] = useState<string>("google");
+  const [selectedModelId, setSelectedModelId] = useState<string>("gemini-2.5-pro-exp-03-25");
+  const [models, setModels] = useState<ModelsResponse | null>(null);
+  const [isLoadingModels, setIsLoadingModels] = useState<boolean>(false);
 
+  // Fetch available models on component mount
   useEffect(() => {
-    console.log("Chat page mounted");
+    const fetchModels = async () => {
+      setIsLoadingModels(true);
+      try {
+        const response = await fetch("http://localhost:8000/models");
+        if (!response.ok) {
+          throw new Error(`Failed to fetch models: ${response.status}`);
+        }
+        const data = await response.json();
+        setModels(data);
+        
+        // Set first available provider and model as default
+        for (const [provider, config] of Object.entries(data) as [string, ProviderConfig][]) {
+          if (config.available && config.models.length > 0) {
+            setSelectedProvider(provider);
+            setSelectedModelId(config.models[0].id);
+            break;
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching models:", error);
+        setError("Failed to fetch available models");
+      } finally {
+        setIsLoadingModels(false);
+      }
+    };
+
+    fetchModels();
   }, []);
+
+  const handleProviderChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const provider = e.target.value;
+    setSelectedProvider(provider);
+    
+    // Find the best model for this provider
+    const bestModelId = findBestModelForProvider(models, provider);
+    if (bestModelId) {
+      setSelectedModelId(bestModelId);
+    }
+  };
+
+  const handleModelChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setSelectedModelId(e.target.value);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -31,7 +79,11 @@ export default function Chat() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ message: userInput }),
+        body: JSON.stringify({ 
+          message: userInput,
+          provider: selectedProvider,
+          model_id: selectedModelId
+        }),
         signal: controller.signal
       });
       
@@ -85,6 +137,60 @@ export default function Chat() {
           )}
         </div>
         
+        <div className="mb-4 flex flex-col sm:flex-row gap-4">
+          <div className="flex-1">
+            <label htmlFor="provider" className="block text-sm font-medium mb-1">Provider</label>
+            <select
+              id="provider"
+              className="w-full p-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800"
+              value={selectedProvider}
+              onChange={handleProviderChange}
+              disabled={isLoadingModels || !models}
+            >
+              {!models ? (
+                <option>Loading...</option>
+              ) : (
+                Object.keys(models).map(provider => (
+                  <option 
+                    key={provider} 
+                    value={provider}
+                    disabled={!isProviderAvailable(models, provider)}
+                  >
+                    {provider.charAt(0).toUpperCase() + provider.slice(1)} {!isProviderAvailable(models, provider) && "(API key required)"}
+                  </option>
+                ))
+              )}
+            </select>
+          </div>
+          
+          <div className="flex-1">
+            <label htmlFor="model" className="block text-sm font-medium mb-1">Model</label>
+            <select
+              id="model"
+              className="w-full p-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800"
+              value={selectedModelId}
+              onChange={handleModelChange}
+              disabled={isLoadingModels || !models}
+            >
+              {!models ? (
+                <option>Loading...</option>
+              ) : (
+                models[selectedProvider]?.models.map((model) => (
+                  <option key={model.id} value={model.id}>
+                    {model.name}
+                  </option>
+                ))
+              )}
+            </select>
+          </div>
+        </div>
+        
+        {selectedProvider && selectedModelId && models && (
+          <div className="mb-4 text-sm text-gray-500">
+            <p>{getModelDescription(models, selectedProvider, selectedModelId)}</p>
+          </div>
+        )}
+        
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <textarea
             className="w-full p-4 border border-gray-300 dark:border-gray-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-800 min-h-[120px] resize-none"
@@ -96,7 +202,7 @@ export default function Chat() {
           
           <button
             type="submit"
-            disabled={isLoading || !userInput.trim()}
+            disabled={isLoading || !userInput.trim() || !selectedModelId}
             className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-12 px-5 disabled:opacity-50 disabled:cursor-not-allowed self-end"
           >
             {isLoading ? "Sending..." : "Send Message"}

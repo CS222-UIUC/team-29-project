@@ -100,7 +100,7 @@ async def chat(message: ChatMessage) -> dict:
         response_text = await generate_response(
             message=message.message,
             provider=message.provider,
-            model_id=message.model_id
+            model_id=message.model_id,
         )
         return {"response": response_text}
     except HTTPException as excp_err:

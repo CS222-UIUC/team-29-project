@@ -1,12 +1,13 @@
 "use client";
 
-// import Image from "next/image";
 import Link from "next/link";
 import { useState, useEffect } from "react";
+import { signIn, signOut, useSession } from "next-auth/react";
 
 export default function Home() {
   const [apiStatus, setApiStatus] = useState<string>("Checking...");
   const [statusClass, setStatusClass] = useState<string>("");
+  const { data: session, status } = useSession();
 
   useEffect(() => {
     fetch('/api/health')
@@ -15,8 +16,8 @@ export default function Home() {
         setApiStatus(data.status || "Online");
         setStatusClass("text-green-500 font-bold");
       })
-      .catch(error => {
-        setApiStatus("Offline" + (error ? `: ${error.message}` : ""));
+      .catch(() => {
+        setApiStatus("Offline");
         setStatusClass("text-red-500 font-bold");
       });
   }, []);
@@ -28,7 +29,33 @@ export default function Home() {
         <p className="text-xl mb-6">A branching chat interface for LLMs</p>
         
         <div className="p-4 bg-black/[.05] dark:bg-white/[.06] rounded-lg mb-6">
-          <p>API Status: <span className={statusClass}>{apiStatus}</span></p>
+          <p>
+            API Status: <span className={statusClass}>{apiStatus}</span>
+          </p>
+        </div>
+
+        {/* Google Authentication Section */}
+        <div className="flex gap-4 items-center">
+          {status === "loading" ? (
+            <p>Loading...</p>
+          ) : session ? (
+            <div className="flex items-center gap-2">
+              <p className="text-sm">Signed in as {session.user?.email}</p>
+              <button
+                onClick={() => signOut()}
+                className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-red-500 text-white gap-2 hover:bg-red-600 text-sm h-10 px-4"
+              >
+                Sign out
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={(e) => {e.preventDefault();signIn("google")}}
+              className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-blue-500 text-white gap-2 hover:bg-blue-600 text-sm h-10 px-4"
+            >
+              Sign in with Google
+            </button>
+          )}
         </div>
 
         <div className="flex gap-4 items-center flex-col sm:flex-row">

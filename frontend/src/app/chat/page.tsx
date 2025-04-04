@@ -2,10 +2,12 @@
 
 import Link from "next/link";
 import { useState, useEffect } from "react";
+import { useSession } from "next-auth/react";
 import { ModelsResponse, ProviderConfig } from "@/types/models";
 import { findBestModelForProvider, getModelDescription, isProviderAvailable } from "@/utils/modelUtils";
 
 export default function Chat() {
+  const { data: session } = useSession();
   const [userInput, setUserInput] = useState<string>("");
   const [response, setResponse] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -14,6 +16,7 @@ export default function Chat() {
   const [selectedModelId, setSelectedModelId] = useState<string>("gemini-2.5-pro-exp-03-25");
   const [models, setModels] = useState<ModelsResponse | null>(null);
   const [isLoadingModels, setIsLoadingModels] = useState<boolean>(false);
+  const [conversationId, setConversationId] = useState<string | null>(null);
 
   // Fetch available models on component mount
   useEffect(() => {
@@ -82,7 +85,9 @@ export default function Chat() {
         body: JSON.stringify({ 
           message: userInput,
           provider: selectedProvider,
-          model_id: selectedModelId
+          model_id: selectedModelId,
+          user_id: session?.user?.id || null,
+          conversation_id: conversationId
         }),
         signal: controller.signal
       });
@@ -95,6 +100,11 @@ export default function Chat() {
       
       const data = await result.json();
       setResponse(data.response);
+      
+      // If we got a conversation ID back, store it
+      if (data.conversation_id) {
+        setConversationId(data.conversation_id);
+      }
     } catch (error: unknown) {
       console.error("API Error:", error);
       
@@ -188,6 +198,17 @@ export default function Chat() {
         {selectedProvider && selectedModelId && models && (
           <div className="mb-4 text-sm text-gray-500">
             <p>{getModelDescription(models, selectedProvider, selectedModelId)}</p>
+          </div>
+        )}
+        
+        {session ? (
+          <div className="mb-4 text-sm text-green-600">
+            <p>Logged in as {session.user?.name}. Your conversations will be saved.</p>
+            {conversationId && <p>Conversation ID: {conversationId}</p>}
+          </div>
+        ) : (
+          <div className="mb-4 text-sm text-amber-600">
+            <p>Not logged in. Your conversations will not be saved. <Link href="/auth/signin" className="underline">Sign in</Link> to save conversations.</p>
           </div>
         )}
         

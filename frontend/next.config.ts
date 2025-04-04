@@ -4,6 +4,12 @@ const nextConfig: NextConfig = {
   // Ensure API routes are properly directed to the backend
   async rewrites() {
     return [
+      // Keep NextAuth routes on the frontend
+      {
+        source: '/api/auth/:path*',
+        destination: '/api/auth/:path*',
+      },
+      // Forward other API routes to the backend
       {
         source: '/api/:path*',
         destination: process.env.NODE_ENV === 'production' 

@@ -3,21 +3,49 @@ Models module for handling interactions with different AI services
 """
 
 import asyncio
-from typing import Dict
+from datetime import datetime
+from typing import Dict, List, Optional
 
 import anthropic
 import google.generativeai as genai
+import motor.motor_asyncio
 import openai
 from fastapi import HTTPException
+from pydantic import BaseModel, Field
 
-from app.config import ANTHROPIC_API_KEY, DEFAULT_MODEL_ID, DEFAULT_MODEL_PROVIDER, GEMINI_API_KEY, MODEL_CONFIGS, OPENAI_API_KEY  # noqa: E501
+from app.config import ANTHROPIC_API_KEY, DEFAULT_MODEL_ID, DEFAULT_MODEL_PROVIDER, GEMINI_API_KEY, MODEL_CONFIGS, MONGODB_URI, OPENAI_API_KEY  # noqa: E501
 
 # Configure API clients
 genai.configure(api_key=GEMINI_API_KEY)
 
+# MongoDB client
+client = motor.motor_asyncio.AsyncIOMotorClient(MONGODB_URI)
+db = client.threadflow
+users_collection = db.users
+conversations_collection = db.conversations
+
 # Model provider clients
 _ANTHROPIC_CLIENT = None
 _OPENAI_CLIENT = None
+
+# User models
+class User(BaseModel):
+    """User model for storing user information"""
+    id: str
+    name: Optional[str] = None
+    email: Optional[str] = None
+    image: Optional[str] = None
+    created_at: datetime = Field(default_factory=datetime.now)
+    updated_at: datetime = Field(default_factory=datetime.now)
+    
+class Conversation(BaseModel):
+    """Conversation model for storing chat history"""
+    id: str
+    user_id: str
+    title: str
+    messages: List[Dict] = []
+    created_at: datetime = Field(default_factory=datetime.now)
+    updated_at: datetime = Field(default_factory=datetime.now)
 
 
 def get_anthropic_client():

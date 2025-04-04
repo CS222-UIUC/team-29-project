@@ -19,6 +19,8 @@ google-generativeai = "*"
 python-dotenv = "*"
 anthropic = "*"
 openai = "*"
+email-validator = "*"
+pydantic-extra-types = "*"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "*"

@@ -50,7 +50,7 @@ export default function Home() {
             </div>
           ) : (
             <button
-              onClick={(e) => {e.preventDefault();signIn("google")}}
+              onClick={(e) => {e.preventDefault();signIn("google", { callbackUrl: "/" })}}
               className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-blue-500 text-white gap-2 hover:bg-blue-600 text-sm h-10 px-4"
             >
               Sign in with Google

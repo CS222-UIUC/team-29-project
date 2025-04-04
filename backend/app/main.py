@@ -89,7 +89,6 @@ async def chat(message: ChatMessage):
     try:
         # Generate response using the specified provider and model
         response_text = await generate_response(message=message.message, provider=message.provider, model_id=message.model_id)
-        
         # If user_id is provided, save the conversation
         if message.user_id:
             # Check if conversation exists
@@ -229,7 +228,6 @@ async def get_user_conversations(user_id: str):
     conversations = await conversations_collection.find({"user_id": user_id}).to_list(length=100)
     return [Conversation(**conv) for conv in conversations]
 
-
 @app.get("/debug/all-conversations")
 async def get_all_conversations():
     """Debug endpoint: Get all conversations in the database"""
@@ -250,3 +248,4 @@ async def get_all_users():
         if "_id" in user:
             user["_id"] = str(user["_id"])
     return users
+

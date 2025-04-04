@@ -2,13 +2,13 @@
 
 import Link from "next/link";
 import { useState, useEffect } from "react";
-import { v4 as uuidv4 } from 'uuid';
+import { v4 as uuidv4 } from "uuid";
 
 // Define the structure of a chat message
 interface Message {
   id: string;
   text: string;
-  sender: 'user' | 'ai';
+  sender: "user" | "ai";
 }
 
 // Define the structure of a chat session
@@ -43,6 +43,28 @@ export default function Chat() {
     setActiveChatId(newChatId);
   };
 
+  // Branch out an existing chat session from a specific message
+  const branchChatFromMessage = (messageId: string) => {
+    const activeChat = chatSessions.find(session => session.id === activeChatId);
+    if (!activeChat) return;
+    
+    // Find the index of the message to branch from
+    const branchIndex = activeChat.messages.findIndex(m => m.id === messageId);
+    if (branchIndex === -1) return;
+    
+    // Create a new chat session with messages from the beginning up to the selected message (inclusive)
+    const newChatId = uuidv4();
+    const newMessages = activeChat.messages.slice(0, branchIndex + 1);
+    const newChat: ChatSession = {
+      id: newChatId,
+      name: `${activeChat.name} (Branch from ${branchIndex + 1})`,
+      messages: newMessages
+    };
+
+    setChatSessions(prevSessions => [...prevSessions, newChat]);
+    setActiveChatId(newChatId);
+  };
+
   // Initialize with a first chat session on component mount
   useEffect(() => {
     createNewChat();
@@ -61,7 +83,7 @@ export default function Chat() {
     const userMessage: Message = {
       id: uuidv4(),
       text: userInput,
-      sender: 'user'
+      sender: "user"
     };
     
     // Update chat sessions to add user message
@@ -77,10 +99,10 @@ export default function Chat() {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 30000);
       
-      const result = await fetch('http://localhost:8000/chat', {
-        method: 'POST',
+      const result = await fetch("http://localhost:8000/chat", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({ message: userInput }),
         signal: controller.signal
@@ -98,7 +120,7 @@ export default function Chat() {
       const aiMessage: Message = {
         id: uuidv4(),
         text: data.response,
-        sender: 'ai'
+        sender: "ai"
       };
       
       // Update chat sessions to add AI message
@@ -115,10 +137,10 @@ export default function Chat() {
       // Create error message
       const errorMessage: Message = {
         id: uuidv4(),
-        text: error instanceof Error && error.name === 'AbortError'
+        text: error instanceof Error && error.name === "AbortError"
           ? "Request timed out. The API might be taking too long to respond."
           : "Error connecting to the server. Please try again.",
-        sender: 'ai'
+        sender: "ai"
       };
       
       setChatSessions(prevSessions => 
@@ -156,8 +178,8 @@ export default function Chat() {
             onClick={() => setActiveChatId(session.id)}
             className={`w-full text-left p-2 mb-2 rounded ${
               activeChatId === session.id 
-                ? 'bg-blue-100 dark:bg-blue-900' 
-                : 'hover:bg-gray-100 dark:hover:bg-gray-700'
+                ? "bg-blue-100 dark:bg-blue-900" 
+                : "hover:bg-gray-100 dark:hover:bg-gray-700"
             }`}
           >
             {session.name}
@@ -182,16 +204,24 @@ export default function Chat() {
           
           {/* Chat messages display */}
           <div className="bg-black/[.05] dark:bg-white/[.06] rounded-lg p-6 mb-6 min-h-[200px] flex flex-col space-y-4 overflow-y-auto max-h-[400px]">
-            {activeChat?.messages.map(message => (
+            {activeChat?.messages.map((message, index) => (
               <div 
                 key={message.id} 
-                className={`p-3 rounded-lg ${
-                  message.sender === 'user' 
-                    ? 'bg-blue-100 dark:bg-blue-900 self-end' 
-                    : 'bg-gray-100 dark:bg-gray-700 self-start'
+                className={`p-3 rounded-lg relative ${
+                  message.sender === "user" 
+                    ? "bg-blue-100 dark:bg-blue-900 self-end" 
+                    : "bg-gray-100 dark:bg-gray-700 self-start"
                 }`}
               >
                 {message.text}
+                {/* Branch button: clicking it creates a new chat session with all messages up to this one */}
+                <button
+                  onClick={() => branchChatFromMessage(message.id)}
+                  className="absolute top-1 right-1 text-xs text-blue-600 hover:underline"
+                  title="Branch from here"
+                >
+                  Branch
+                </button>
               </div>
             ))}
             

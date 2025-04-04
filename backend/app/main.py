@@ -46,6 +46,8 @@ class ChatMessage(BaseModel):
     message: str
     provider: str = DEFAULT_MODEL_PROVIDER
     model_id: str = DEFAULT_MODEL_ID
+    user_id: Optional[str] = None
+    conversation_id: Optional[str] = None
 
 
 class UserCreate(BaseModel):
@@ -87,6 +89,57 @@ async def chat(message: ChatMessage):
     try:
         # Generate response using the specified provider and model
         response_text = await generate_response(message=message.message, provider=message.provider, model_id=message.model_id)
+        # If user_id is provided, save the conversation
+        if message.user_id:
+            # Check if conversation exists
+            conversation = None
+            if message.conversation_id:
+                conversation = await conversations_collection.find_one({"id": message.conversation_id})
+            
+            # Create new conversation if needed
+            if not conversation:
+                conversation_id = str(uuid.uuid4())
+                conversation = {
+                    "id": conversation_id,
+                    "user_id": message.user_id,
+                    "title": message.message[:30] + "..." if len(message.message) > 30 else message.message,
+                    "messages": [],
+                    "created_at": datetime.now(),
+                    "updated_at": datetime.now()
+                }
+                await conversations_collection.insert_one(conversation)
+            else:
+                conversation_id = conversation["id"]
+                
+            # Add messages to conversation
+            await conversations_collection.update_one(
+                {"id": conversation_id},
+                {
+                    "$push": {
+                        "messages": {
+                            "$each": [
+                                {
+                                    "role": "user", 
+                                    "content": message.message,
+                                    "timestamp": datetime.now()
+                                },
+                                {
+                                    "role": "assistant", 
+                                    "content": response_text,
+                                    "timestamp": datetime.now()
+                                }
+                            ]
+                        }
+                    },
+                    "$set": {"updated_at": datetime.now()}
+                }
+            )
+            
+            return {
+                "response": response_text,
+                "conversation_id": conversation_id
+            }
+            
         return {"response": response_text}
     except HTTPException as excp_err:
         # Log the error
@@ -174,3 +227,25 @@ async def get_user_conversations(user_id: str):
     
     conversations = await conversations_collection.find({"user_id": user_id}).to_list(length=100)
     return [Conversation(**conv) for conv in conversations]
+
+@app.get("/debug/all-conversations")
+async def get_all_conversations():
+    """Debug endpoint: Get all conversations in the database"""
+    conversations = await conversations_collection.find().to_list(length=100)
+    # Convert MongoDB ObjectId to string to make it JSON serializable
+    for conv in conversations:
+        if "_id" in conv:
+            conv["_id"] = str(conv["_id"])
+    return conversations
+
+
+@app.get("/debug/all-users")
+async def get_all_users():
+    """Debug endpoint: Get all users in the database"""
+    users = await users_collection.find().to_list(length=100)
+    # Convert MongoDB ObjectId to string to make it JSON serializable
+    for user in users:
+        if "_id" in user:
+            user["_id"] = str(user["_id"])
+    return users
+

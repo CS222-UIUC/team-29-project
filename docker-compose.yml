@@ -31,8 +31,6 @@ services:
       - /app/node_modules
     environment:
       - NEXT_PUBLIC_API_URL=http://backend:8000
-<<<<<<< HEAD
-=======
       - GEMINI_API_KEY=${GEMINI_API_KEY:-}
       - OPENAI_API_KEY=${OPENAI_API_KEY:-}
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
@@ -44,7 +42,6 @@ services:
       - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET:-}
     env_file:
       - ./.env
->>>>>>> google-auth
     stdin_open: true
     # Using the default npm run dev which already includes turbopack
     command: npm run dev -- --hostname 0.0.0.0

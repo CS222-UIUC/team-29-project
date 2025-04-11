@@ -5,7 +5,7 @@ Models module for handling interactions with different AI services
 import asyncio
 from datetime import datetime
 from typing import Dict, List, Optional
-
+import uuid
 import anthropic
 import google.generativeai as genai
 import motor.motor_asyncio
@@ -28,6 +28,20 @@ conversations_collection = db.conversations
 _ANTHROPIC_CLIENT = None
 _OPENAI_CLIENT = None
 
+# Message format within conversation.messages (for reference)
+# {
+#    "id": str,  # Unique UUID for the message
+#    "role": str,  # "user" or "assistant"
+#    "content": str,  # Message content
+#    "timestamp": datetime  # When the message was created
+# }
+
+class MessageItem(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    role: str
+    content: str
+    timestamp: datetime = Field(default_factory=datetime.now)
+    
 # User models
 class User(BaseModel):
     """User model for storing user information"""
@@ -43,9 +57,13 @@ class Conversation(BaseModel):
     id: str
     user_id: str
     title: str
-    messages: List[Dict] = []
+    messages: List[MessageItem] = []
     created_at: datetime = Field(default_factory=datetime.now)
     updated_at: datetime = Field(default_factory=datetime.now)
+    parent_conversation_id: Optional[str] = None
+    branch_point_message_id: Optional[str] = None
+
+
 
 
 def get_anthropic_client():

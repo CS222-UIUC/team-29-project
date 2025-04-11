@@ -5,6 +5,8 @@ from typing import Dict, List
 
 from google.cloud import secretmanager  # pylint: disable=E0611
 
+from app.logging import logger
+
 
 def get_secret(secret_id, default_value=""):
     """Get a secret from Secret Manager or use default/env value"""
@@ -17,7 +19,7 @@ def get_secret(secret_id, default_value=""):
             response = client.access_secret_version(request={"name": name})
             return response.payload.data.decode("UTF-8")
         except Exception as excp_err:  # pylint: disable=W0703
-            print(f"Error accessing secret {secret_id}: {excp_err}")
+            logger.error(f"Error accessing secret {secret_id}: {excp_err}")
             # Fall back to environment variable
             return os.environ.get(secret_id.replace("-", "_").upper(), default_value)
     else:

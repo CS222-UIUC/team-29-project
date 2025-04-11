@@ -10,6 +10,11 @@ The backend API for ThreadFlow chat application built with FastAPI and MongoDB.
   - OpenAI's GPT-4o model
 - Model selection API endpoint
 - Health check endpoint
+- Comprehensive logging system:
+  - Console output for real-time monitoring
+  - Log file rotation to prevent excessive file sizes
+  - Multiple log levels (DEBUG, INFO, WARNING, ERROR)
+  - Structured log format with timestamps and source information
 
 ## Setup
 
@@ -45,3 +50,20 @@ poetry run uvicorn app.main:app --reload
 - `GET /health` - Health check
 - `GET /models` - Get available AI models
 - `POST /chat` - Send a chat message to an AI model
+- `GET /debug/logs` - Get recent log entries (development only)
+
+## Logging
+
+The application uses a structured logging system with the following features:
+
+- Log levels: DEBUG, INFO, WARNING, ERROR, CRITICAL
+- Log format: timestamp, logger name, level, file:line, message
+- Log location: `logs/threadflow.log`
+- Log rotation: 10MB file size with 5 backup files
+- Console output: INFO level and above 
+- File output: DEBUG level and above
+
+To view logs in development:
+- Check the console output for INFO level and above
+- Examine the log file at `logs/threadflow.log`
+- Use the debug endpoint: `GET /debug/logs?lines=100`

@@ -24,31 +24,46 @@ pydantic-extra-types = "*"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "*"
-black = "*"
-isort = "*"
-flake8 = "*"
-pylint = "*"
 httpx = "*"
+pytest-asyncio = "^0.26.0"
+ruff = "^0.11.5"
 
-[tool.black]
+[tool.ruff]
+target-version = "py310"
+src = ["app"]
 line-length = 150
-target-version = ["py310"]
-include = '\.pyi?$'
 
-[tool.isort]
-profile = "black"
-line_length = 150
+[tool.ruff.lint]
+exclude = [".venv", "build", "dist"]
+isort.known-first-party = ["app"]
+pydocstyle.convention = "google"
 
-[tool.pylint.messages_control]
-disable = [
-    "too-few-public-methods",
-    "missing-module-docstring",
-    "missing-function-docstring",
-    "broad-exception-caught"
+
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes
+    "I",   # isort
+    "UP",  # pyupgrade
+    "B",   # flake8-bugbear
+    "C4",  # flake8-comprehensions
+    "SIM", # flake8-simplify
+    "PLW", # pylint warnings
+    "PLC", # pylint convention
+    "PLE", # pylint error
+    "N",   # pep8-naming
+    "D",   # pydocstyle
 ]
 
-[tool.pylint.format]
-max-line-length = "150"
+ignore = [
+    "E501",    # line too long (handled by formatter)
+    "B008",    # do not perform function call in argument defaults
+    "B904",    # raise from
+    "D100",    # missing module docstring
+    "D103",    # missing function docstring
+    "D415",    # First line end with period
+    "D205",    # 1 blank line
+]
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

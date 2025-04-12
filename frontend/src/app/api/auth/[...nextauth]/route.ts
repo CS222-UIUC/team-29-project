@@ -25,29 +25,7 @@ export const authOptions: NextAuthOptions = {
       // Persist the OAuth access_token to the token right after signin
       if (account) {
         token.accessToken = account.access_token;
-        
-        // Store user in database through our API
-        try {
-          const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
-          const response = await fetch(`${apiUrl}/users`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              id: token.sub,
-              email: token.email,
-              name: token.name,
-              image: token.picture,
-            }),
-          });
-          
-          if (!response.ok) {
-            console.error('Failed to store user in database', await response.text());
-          }
-        } catch (error) {
-          console.error('Error storing user in database:', error);
-        }
+        // User creation is now handled by the backend when token is presented
       }
       return token;
     },

@@ -50,5 +50,13 @@ jobs:
     - name: Build
       run: npm run build --if-present
     
-    - name: Test
-      run: npm test --if-present
+    - name: Run standard tests
+      run: npm test -- --testPathIgnorePatterns=".security.test.js|.security.test.tsx|.integration.test.js|.integration.test.tsx"
+      
+    - name: Run security tests
+      if: github.event_name == 'pull_request' || github.ref == 'refs/heads/main'
+      run: npm test -- --testMatch="**/*.security.test.[jt]s?(x)"
+      
+    - name: Run integration tests
+      if: github.ref == 'refs/heads/main'
+      run: npm test -- --testMatch="**/*.integration.test.[jt]s?(x)"

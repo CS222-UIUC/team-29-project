@@ -1,9 +1,8 @@
 """Configuration module for handling secrets and model configurations."""
 
 import os
-from typing import Dict, List
 
-from google.cloud import secretmanager  # pylint: disable=E0611
+from google.cloud import secretmanager  # noqa: PLE0611
 
 from app.logging import logger
 
@@ -18,8 +17,8 @@ def get_secret(secret_id, default_value=""):
             name = f"projects/{project_id}/secrets/{secret_id}/versions/latest"
             response = client.access_secret_version(request={"name": name})
             return response.payload.data.decode("UTF-8")
-        except Exception as excp_err:  # pylint: disable=W0703
-            logger.error(f"Error accessing secret {secret_id}: {excp_err}")
+        except Exception as excp_err:  # noqa: E722, BLE001
+            logger.error("Error accessing secret %s: %s", secret_id, excp_err)
             # Fall back to environment variable
             return os.environ.get(secret_id.replace("-", "_").upper(), default_value)
     else:
@@ -37,7 +36,7 @@ OPENAI_API_KEY = get_secret("openai-api-key", "")
 ANTHROPIC_API_KEY = get_secret("anthropic-api-key", "")
 
 # Model configurations
-MODEL_CONFIGS: Dict[str, List[Dict[str, str]]] = {
+MODEL_CONFIGS: dict[str, list[dict[str, str]]] = {
     "google": [
         {
             "id": "gemini-2.5-pro-exp-03-25",

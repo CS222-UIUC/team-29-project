@@ -51,6 +51,50 @@ function ChatSidebar({ metadataList, activeId, onSelect, onCreateNew, isLoading 
   );
 }
 
+interface SidebarProps {
+  metadataList: ConversationMetadata[];
+  activeId: string | null;
+  onSelect: (id: string) => void;
+  onCreateNew: () => void; // Callback to create a new root chat
+  isLoading: boolean;
+}
+
+function ChatSidebar({ metadataList, activeId, onSelect, onCreateNew, isLoading }: SidebarProps) {
+  const sortedList = metadataList
+      ? [...metadataList].sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())
+      : null;
+
+  return (
+      <div className="w-64 pr-4 border-r border-gray-300 dark:border-gray-700 flex flex-col h-full overflow-y-auto">
+           <button
+              onClick={onCreateNew}
+              className="w-full mb-4 p-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-50"
+              disabled={isLoading}
+          >
+              + New Chat
+          </button>
+          {isLoading && <p className="text-sm text-gray-500">Loading chats...</p>}
+          {!isLoading && !sortedList?.length && <p className="text-sm text-gray-500">No conversations yet.</p>}
+          {sortedList?.map(meta => (
+              <button
+                  key={meta.id}
+                  onClick={() => onSelect(meta.id)}
+                  className={`w-full text-left p-2 mb-1 rounded text-sm truncate ${
+                      activeId === meta.id
+                          ? "bg-blue-100 dark:bg-blue-800 font-semibold"
+                          : "hover:bg-gray-100 dark:hover:bg-gray-700"
+                  }`}
+                  title={meta.title} // Show full title on hover
+              >
+                  {/* Add indicator for branches? */}
+                  {meta.parent_conversation_id && <span className="mr-1"> L </span>}
+                  {meta.title}
+              </button>
+          ))}
+      </div>
+  );
+}
+
 export default function Chat() {
   const { data: session, status } = useSession();
   // --- Existing State ---

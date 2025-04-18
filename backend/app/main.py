@@ -50,7 +50,12 @@ class ChatResponse(BaseModel):
     user_message_id: str
     assistant_message_id: str
 
-
+class ChatResponse(BaseModel):
+    response: str
+    conversation_id: str
+    user_message_id: str
+    assistant_message_id: str
+    
 class UserCreate(BaseModel):
     """User creation model for API requests"""
 
@@ -84,7 +89,19 @@ class BranchRequest(BaseModel):
 
     message_id: str
 
+class ConversationMetadata(BaseModel):
+    id: str
+    user_id: str
+    title: str
+    created_at: datetime
+    updated_at: datetime
+    parent_conversation_id: Optional[str] = None
+    branch_point_message_id: Optional[str] = None
 
+class BranchRequest(BaseModel):
+    message_id: str
+    user_id: str
+    
 @app.get("/")
 async def root():
     """Returns a message referencing the API"""
@@ -119,7 +136,6 @@ async def chat(message: ChatMessage, current_user: User = Depends(get_current_us
         else:
             # If conversation_id provided but not found/owned, treat as starting new
             target_conversation_id = None
-
     if not conversation:
         new_conv_id = str(uuid.uuid4())
         conversation = Conversation(

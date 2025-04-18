@@ -43,6 +43,7 @@ _OPENAI_CLIENT = None
 # }
 
 
+
 class MessageItem(BaseModel):
     """Model for individual messages in conversations"""
 
@@ -50,7 +51,6 @@ class MessageItem(BaseModel):
     role: str
     content: str
     timestamp: datetime = Field(default_factory=datetime.now)
-
 
 # User models
 class User(BaseModel):
@@ -70,11 +70,13 @@ class Conversation(BaseModel):
     id: str
     user_id: str
     title: str
+
     messages: list[MessageItem] = []
     created_at: datetime = Field(default_factory=datetime.now)
     updated_at: datetime = Field(default_factory=datetime.now)
     parent_conversation_id: str | None = None
     branch_point_message_id: str | None = None
+
 
 
 def get_anthropic_client():

@@ -21,12 +21,16 @@ pytestmark = pytest.mark.security
 app.dependency_overrides = {}
 client = TestClient(app)
 
+
 # ----- Mocking Utilities for MongoDB Async API -----
 def async_return(result):
     """Helper to create an async function that returns a given result."""
+
     async def func(*args, **kwargs):
         return result
+
     return func
+
 
 def mock_motor_methods(collection_mock, find_results=None):
     """Set up appropriate mocks for an AsyncMock MongoDB collection."""
@@ -41,6 +45,7 @@ def mock_motor_methods(collection_mock, find_results=None):
         find_cursor.sort = AsyncMock(return_value=sort_cursor)
         # Set the find method on the collection
         collection_mock.find.side_effect = async_return(find_cursor)
+
 
 # Mock user data for tests
 MOCK_USER_ID = "test-user-123"
@@ -260,6 +265,7 @@ async def test_get_conversations_endpoint(mock_conversations_collection, mock_ge
     pytest.skip("Skipping this test as it requires complex mocking of MongoDB async methods")
     # Create a mock user for the dependency override
     from app.models import User
+
     mock_user = User(**MOCK_USER)
     mock_get_current_user.return_value = mock_user
     # Set up the dependency override

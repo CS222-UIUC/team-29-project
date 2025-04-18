@@ -6,8 +6,6 @@ from google.cloud import secretmanager  # noqa: PLE0611
 
 from app.logging import logger
 
-from app.logging import logger
-
 
 def get_secret(secret_id, default_value=""):
     """Get a secret from Secret Manager or use default/env value"""

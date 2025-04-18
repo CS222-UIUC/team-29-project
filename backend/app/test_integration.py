@@ -1,18 +1,18 @@
 # backend/app/test_integration.py
 
-import asyncio
+from datetime import datetime, timedelta
+
+import httpx  # Import httpx
 import pymongo
 import pytest
-import httpx # Import httpx
-from httpx import ASGITransport # Import ASGITransport
-from fastapi.testclient import TestClient # Keep for sync tests if needed
-from datetime import datetime, timedelta
+from fastapi.testclient import TestClient  # Keep for sync tests if needed
+from httpx import ASGITransport  # Import ASGITransport
 from jose import jwt
-from unittest.mock import patch, AsyncMock, MagicMock
+
+from app.config import JWT_SECRET, MONGODB_URI
 
 # Import necessary components
-from app.main import app # Need the app instance for the transport
-from app.config import JWT_SECRET, MONGODB_URI
+from app.main import app  # Need the app instance for the transport
 from app.security import ALGORITHM
 
 # Mark all tests in this module as integration tests
@@ -20,6 +20,7 @@ pytestmark = pytest.mark.integration
 
 # --- Synchronous Test Client (Optional, for purely sync endpoints) ---
 sync_client = TestClient(app)
+
 
 # --- Asynchronous Test Client Fixture ---
 @pytest.fixture(scope="function")
@@ -30,6 +31,7 @@ async def async_client():
     async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
         yield client
     # No explicit cleanup needed for the transport here
+
 
 # --- Synchronous MongoDB Client for Setup/Teardown ---
 # Using sync client for test data management is generally simpler and safer
@@ -44,6 +46,7 @@ TEST_USER_ID = "integration-test-user"
 TEST_USER_EMAIL = "integration@test.com"
 TEST_USER_NAME = "Integration Tester"
 TEST_USER_IMAGE = "https://example.com/integration.jpg"
+
 
 # --- Pytest Fixture for Database Setup/Teardown ---
 @pytest.fixture(scope="module", autouse=True)
@@ -60,7 +63,7 @@ def clean_test_database():
     except Exception as e:
         print(f"Warning: Database cleanup failed before tests: {e}")
 
-    yield # Run tests
+    yield  # Run tests
 
     print("\nClearing integration test data after tests...")
     try:
@@ -70,6 +73,7 @@ def clean_test_database():
         print(f"Database cleared after tests (Users: {delete_user_result.deleted_count}, Convs: {delete_conv_result.deleted_count}).")
     except Exception as e:
         print(f"Warning: Database cleanup failed after tests: {e}")
+
 
 # --- Helper function to create JWT tokens ---
 def create_test_token(user_id=TEST_USER_ID, expires_delta=None, claims=None):
@@ -90,6 +94,7 @@ def create_test_token(user_id=TEST_USER_ID, expires_delta=None, claims=None):
 
 # --- Tests ---
 
+
 # Use sync_client for purely public endpoints that don't touch async DB logic
 def test_public_endpoints():
     """Test that public endpoints are accessible without auth."""
@@ -103,7 +108,8 @@ def test_public_endpoints():
 
     response = sync_client.get("/models")
     assert response.status_code == 200
-    assert "google" in response.json() # Basic structure check
+    assert "google" in response.json()  # Basic structure check
+
 
 # Use sync_client as these fail before hitting async DB logic
 def test_protected_endpoints_without_auth():
@@ -146,8 +152,12 @@ async def test_conversation_branching(async_client: httpx.AsyncClient):
 
     # Sync setup: Ensure user exists
     user_doc = {
-        "id": user_branch_id, "email": TEST_USER_EMAIL, "name": TEST_USER_NAME,
-        "image": TEST_USER_IMAGE, "created_at": datetime.now(), "updated_at": datetime.now(),
+        "id": user_branch_id,
+        "email": TEST_USER_EMAIL,
+        "name": TEST_USER_NAME,
+        "image": TEST_USER_IMAGE,
+        "created_at": datetime.now(),
+        "updated_at": datetime.now(),
     }
     users_collection.replace_one({"id": user_branch_id}, user_doc, upsert=True)
 
@@ -176,11 +186,7 @@ async def test_conversation_branching(async_client: httpx.AsyncClient):
 
     # Make the branch request
     branch_request_payload = {"message_id": message_to_branch_from_id}
-    response = await async_client.post(
-        f"/conversations/{parent_conv_id}/branch",
-        headers=headers,
-        json=branch_request_payload
-    )
+    response = await async_client.post(f"/conversations/{parent_conv_id}/branch", headers=headers, json=branch_request_payload)
 
     # Verify successful branch creation
     assert response.status_code == 201, f"Response body: {response.text}"
@@ -190,7 +196,7 @@ async def test_conversation_branching(async_client: httpx.AsyncClient):
     assert branch_data["user_id"] == user_branch_id
     assert branch_data["parent_conversation_id"] == parent_conv_id
     assert branch_data["branch_point_message_id"] == message_to_branch_from_id
-    assert len(branch_data["messages"]) == 2 # Should contain messages up to the branch point
+    assert len(branch_data["messages"]) == 2  # Should contain messages up to the branch point
     assert branch_data["messages"][0]["id"] == "msg-1"
     assert branch_data["messages"][1]["id"] == message_to_branch_from_id
 
@@ -200,17 +206,11 @@ async def test_conversation_branching(async_client: httpx.AsyncClient):
     assert branch_doc_db["parent_conversation_id"] == parent_conv_id
 
     # Verify branching from non-existent message fails
-    response_bad_msg = await async_client.post(
-        f"/conversations/{parent_conv_id}/branch",
-        headers=headers,
-        json={"message_id": "non-existent-msg-id"}
-    )
+    response_bad_msg = await async_client.post(f"/conversations/{parent_conv_id}/branch", headers=headers, json={"message_id": "non-existent-msg-id"})
     assert response_bad_msg.status_code == 404
 
     # Verify branching from non-existent conversation fails
     response_bad_conv = await async_client.post(
-        f"/conversations/non-existent-conv/branch",
-        headers=headers,
-        json={"message_id": message_to_branch_from_id}
+        "/conversations/non-existent-conv/branch", headers=headers, json={"message_id": message_to_branch_from_id}
     )
-    assert response_bad_conv.status_code == 404 # Should be 404 as parent not found
+    assert response_bad_conv.status_code == 404  # Should be 404 as parent not found

@@ -13,7 +13,7 @@ services:
       - GEMINI_API_KEY=${GEMINI_API_KEY:-}
       - OPENAI_API_KEY=${OPENAI_API_KEY:-}
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
-      - JWT_SECRET=development_secret_key
+      - JWT_SECRET=${NEXTAUTH_SECRET:-}
     env_file:
       - ./.env
     depends_on:

@@ -5,6 +5,51 @@ import { useState, useEffect, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import { ModelsResponse, ProviderConfig, ConversationMetadata, Conversation, MessageItem, ChatApiResponse} from "@/types/models";
 import { findBestModelForProvider, getModelDescription, isProviderAvailable } from "@/utils/modelUtils";
+import { apiClient } from "@/utils/apiClient";
+
+interface SidebarProps {
+  metadataList: ConversationMetadata[];
+  activeId: string | null;
+  onSelect: (id: string) => void;
+  onCreateNew: () => void; // Callback to create a new root chat
+  isLoading: boolean;
+}
+
+function ChatSidebar({ metadataList, activeId, onSelect, onCreateNew, isLoading }: SidebarProps) {
+  const sortedList = metadataList
+      ? [...metadataList].sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())
+      : null;
+
+  return (
+      <div className="w-64 pr-4 border-r border-gray-300 dark:border-gray-700 flex flex-col h-full overflow-y-auto">
+           <button
+              onClick={onCreateNew}
+              className="w-full mb-4 p-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-50"
+              disabled={isLoading}
+          >
+              + New Chat
+          </button>
+          {isLoading && <p className="text-sm text-gray-500">Loading chats...</p>}
+          {!isLoading && !sortedList?.length && <p className="text-sm text-gray-500">No conversations yet.</p>}
+          {sortedList?.map(meta => (
+              <button
+                  key={meta.id}
+                  onClick={() => onSelect(meta.id)}
+                  className={`w-full text-left p-2 mb-1 rounded text-sm truncate ${
+                      activeId === meta.id
+                          ? "bg-blue-100 dark:bg-blue-800 font-semibold"
+                          : "hover:bg-gray-100 dark:hover:bg-gray-700"
+                  }`}
+                  title={meta.title} // Show full title on hover
+              >
+                  {/* Add indicator for branches? */}
+                  {meta.parent_conversation_id && <span className="mr-1"> L </span>}
+                  {meta.title}
+              </button>
+          ))}
+      </div>
+  );
+}
 
 interface SidebarProps {
   metadataList: ConversationMetadata[];
@@ -75,8 +120,8 @@ export default function Chat() {
       setIsLoadingModels(true);
       setError(null);
       try {
-        // Use relative path for API routes handled by Next.js rewrite
-        const response = await fetch("/api/models");
+        // Use apiClient for authenticated requests
+        const response = await apiClient("/api/models");
         if (!response.ok) {
           throw new Error(`Failed to fetch models: ${response.status}`);
         }
@@ -115,9 +160,8 @@ export default function Chat() {
     setIsLoadingMetadata(true);
     setError(null);
     try {
-      // Use relative path for API routes handled by Next.js rewrite
-      // Pass user_id as query parameter
-      const response = await fetch(`/api/conversations?user_id=${userId}`);
+      // Use apiClient for authenticated requests
+      const response = await apiClient(`/api/conversations`);
       if (!response.ok) {
           if (response.status === 401 || response.status === 403) {
               // Handle auth errors, maybe sign out user?
@@ -153,8 +197,8 @@ export default function Chat() {
     // Optimistically keep old content while loading? Or clear it? Clear for now.
     // setActiveConversationContent(null);
     try {
-      // Pass user_id as query parameter for ownership check on backend
-      const response = await fetch(`/api/conversations/${id}?user_id=${userId}`);
+      // Use apiClient for authenticated requests
+      const response = await apiClient(`/api/conversations/${id}`);
       if (!response.ok) {
         if (response.status === 404) {
              setError("Conversation not found.");
@@ -236,14 +280,12 @@ export default function Chat() {
 
 
     try {
-      const response = await fetch('/api/chat', {
+      const response = await apiClient('/api/chat', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           message: messageToSend,
           provider: selectedProvider,
           model_id: selectedModelId,
-          user_id: userId,
           conversation_id: currentConversationId // Send null/undefined if starting new chat
         }),
       });
@@ -353,10 +395,9 @@ export default function Chat() {
     setError(null);
 
     try {
-       const response = await fetch(`/api/conversations/${activeConversationId}/branch`, {
+       const response = await apiClient(`/api/conversations/${activeConversationId}/branch`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ message_id: messageId, user_id: userId }) // Pass user_id for backend check
+            body: JSON.stringify({ message_id: messageId }) // No need to pass user_id anymore
        });
 
        if (!response.ok) {

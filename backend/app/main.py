@@ -179,8 +179,9 @@ async def get_user_conversations_metadata(current_user: User = Depends(get_curre
     projection = {"messages": 0, "_id": 0}  # Exclude MongoDB default _id too
 
     # Fix for async nature of find()
-    find_cursor = await conversations_collection.find({"user_id": current_user.id}, projection=projection)
-    # Sort the cursor
+    find_cursor = conversations_collection.find({"user_id": current_user.id}, projection=projection)
+
+    # Sort the cursor (this also returns a cursor)
     conversations_cursor = find_cursor.sort("updated_at", -1)
     # Convert to list
     conversations_metadata = await conversations_cursor.to_list(length=None)

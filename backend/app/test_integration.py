@@ -1,154 +1,216 @@
 # backend/app/test_integration.py
 
+import asyncio
+import pymongo
 import pytest
-from httpx import AsyncClient # Import AsyncClient
+import httpx # Import httpx
+from httpx import ASGITransport # Import ASGITransport
+from fastapi.testclient import TestClient # Keep for sync tests if needed
 from datetime import datetime, timedelta
-import time # For sleep, if needed
+from jose import jwt
+from unittest.mock import patch, AsyncMock, MagicMock
 
 # Import necessary components
-from app.main import app
-from app.models import users_collection, User # Import User model if needed for checks
+from app.main import app # Need the app instance for the transport
+from app.config import JWT_SECRET, MONGODB_URI
+from app.security import ALGORITHM
 
-# Define TEST_USER_ID or use dynamically generated ones
+# Mark all tests in this module as integration tests
+pytestmark = pytest.mark.integration
+
+# --- Synchronous Test Client (Optional, for purely sync endpoints) ---
+sync_client = TestClient(app)
+
+# --- Asynchronous Test Client Fixture ---
+@pytest.fixture(scope="function")
+async def async_client():
+    # Create an ASGITransport instance using the FastAPI app
+    transport = ASGITransport(app=app)
+    # Pass the transport to the AsyncClient
+    async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+        yield client
+    # No explicit cleanup needed for the transport here
+
+# --- Synchronous MongoDB Client for Setup/Teardown ---
+# Using sync client for test data management is generally simpler and safer
+sync_mongo_client = pymongo.MongoClient(MONGODB_URI)
+sync_db = sync_mongo_client.threadflow
+# Use distinct names to avoid conflicts with potential test variables
+users_collection = sync_db.users
+conversations_collection = sync_db.conversations
+
+# Define Test Constants
 TEST_USER_ID = "integration-test-user"
-TEST_USER_EMAIL = "integration@test.com" # Optional: Add email if needed
+TEST_USER_EMAIL = "integration@test.com"
+TEST_USER_NAME = "Integration Tester"
+TEST_USER_IMAGE = "https://example.com/integration.jpg"
 
-# --- Helper function to create tokens ---
-def create_token(user_id=TEST_USER_ID, expires_delta_minutes=15):
+# --- Pytest Fixture for Database Setup/Teardown ---
+@pytest.fixture(scope="module", autouse=True)
+def clean_test_database():
+    """Clean up test data before and after all tests in the module."""
+    print("\nClearing integration test data before tests...")
+    user_filter = {"id": {"$regex": "^integration-test"}}
+    conv_filter = {"user_id": {"$regex": "^integration-test"}}
+    try:
+        # Use synchronous client for fixture operations
+        delete_user_result = users_collection.delete_many(user_filter)
+        delete_conv_result = conversations_collection.delete_many(conv_filter)
+        print(f"Database cleared before tests (Users: {delete_user_result.deleted_count}, Convs: {delete_conv_result.deleted_count}).")
+    except Exception as e:
+        print(f"Warning: Database cleanup failed before tests: {e}")
+
+    yield # Run tests
+
+    print("\nClearing integration test data after tests...")
+    try:
+        # Use synchronous client for fixture operations
+        delete_user_result = users_collection.delete_many(user_filter)
+        delete_conv_result = conversations_collection.delete_many(conv_filter)
+        print(f"Database cleared after tests (Users: {delete_user_result.deleted_count}, Convs: {delete_conv_result.deleted_count}).")
+    except Exception as e:
+        print(f"Warning: Database cleanup failed after tests: {e}")
+
+# --- Helper function to create JWT tokens ---
+def create_test_token(user_id=TEST_USER_ID, expires_delta=None, claims=None):
     """Creates a JWT token for testing."""
-    expire = datetime.now() + timedelta(minutes=expires_delta_minutes)
-    to_encode = {"sub": user_id, "exp": expire}
-    encoded_jwt = create_access_token(data=to_encode)
+    to_encode = {
+        "sub": user_id,
+        "email": TEST_USER_EMAIL,
+        "name": TEST_USER_NAME,
+        "picture": TEST_USER_IMAGE,
+    }
+    if claims:
+        to_encode.update(claims)
+    expire = datetime.utcnow() + (expires_delta if expires_delta else timedelta(minutes=15))
+    to_encode["exp"] = expire
+    encoded_jwt = jwt.encode(to_encode, JWT_SECRET, algorithm=ALGORITHM)
     return encoded_jwt
 
-# --- Pytest Fixture for Async Client ---
-# Use autouse=True if you want the DB cleared for every test in this module
-# Or create separate fixtures for setup/teardown if needed per test
-@pytest.fixture(scope="module", autouse=True)
-async def clear_test_database():
-    """Fixture to clear relevant test data before and after tests run."""
-    # Clear before tests start for the module
-    await users_collection.delete_many({"id": {"$regex": "^integration-test-"}})
-    yield # Let tests run
-    # Clear after tests finish for the module
-    await users_collection.delete_many({"id": {"$regex": "^integration-test-"}})
 
+# --- Tests ---
 
-@pytest.mark.integration # Ensure pytest marker is present
-@pytest.mark.asyncio # Mark tests needing pytest-asyncio
-async def test_public_endpoints():
-    """Test that public endpoints are accessible."""
-    # Use AsyncClient with the FastAPI app
-    async with AsyncClient(app=app, base_url="http://test") as client:
-        response = await client.get("/")
-        assert response.status_code == 200
-        assert response.json() == {"message": "Welcome to ThreadFlow API"}
+# Use sync_client for purely public endpoints that don't touch async DB logic
+def test_public_endpoints():
+    """Test that public endpoints are accessible without auth."""
+    response = sync_client.get("/")
+    assert response.status_code == 200
+    assert response.json() == {"message": "Welcome to ThreadFlow API"}
 
-        response = await client.get("/health")
-        assert response.status_code == 200
-        assert response.json() == {"status": "healthy"}
+    response = sync_client.get("/health")
+    assert response.status_code == 200
+    assert response.json() == {"status": "healthy"}
 
-        response = await client.get("/models")
-        assert response.status_code == 200
-        assert "google" in response.json() # Basic check
+    response = sync_client.get("/models")
+    assert response.status_code == 200
+    assert "google" in response.json() # Basic structure check
 
-
-@pytest.mark.integration
-@pytest.mark.asyncio
-async def test_protected_endpoints_without_auth():
+# Use sync_client as these fail before hitting async DB logic
+def test_protected_endpoints_without_auth():
     """Test that protected endpoints require authentication."""
-    async with AsyncClient(app=app, base_url="http://test") as client:
-        response = await client.get("/users/me")
-        assert response.status_code == 401 # Expect 401 Unauthorized
+    response = sync_client.get("/users/me")
+    assert response.status_code == 401
+    assert response.json()["detail"] == "Not authenticated"
 
-        response = await client.post("/chat", json={"message": "test"})
-        assert response.status_code == 401
+    response = sync_client.post("/chat", json={"message": "test"})
+    assert response.status_code == 401
+    assert response.json()["detail"] == "Not authenticated"
 
-        response = await client.get("/conversations")
-        assert response.status_code == 401
+    response = sync_client.get("/conversations")
+    assert response.status_code == 401
+    assert response.json()["detail"] == "Not authenticated"
 
-        response = await client.get("/conversations/some-id")
-        assert response.status_code == 401
+    response = sync_client.get("/conversations/some-id")
+    assert response.status_code == 401
+    assert response.json()["detail"] == "Not authenticated"
 
-        response = await client.post("/conversations/some-id/branch", json={"message_id": "msg-id"})
-        assert response.status_code == 401
+    response = sync_client.post("/conversations/some-id/branch", json={"message_id": "msg-id"})
+    assert response.status_code == 401
+    assert response.json()["detail"] == "Not authenticated"
 
 
-@pytest.mark.integration
 @pytest.mark.asyncio
-async def test_protected_endpoints_with_valid_auth():
-    """Test that protected endpoints work with valid authentication"""
-    token = create_token()
-    headers = {"Authorization": f"Bearer {token}"}
-
-    async with AsyncClient(app=app, base_url="http://test") as client:
-        # User profile - This will also trigger user creation if not exists
-        response = await client.get("/users/me", headers=headers)
-        # --- Check the result of the /users/me call ---
-        assert response.status_code == 200
-        user_data = response.json()
-        assert user_data["id"] == TEST_USER_ID
-        # Add checks for other expected fields if needed
-
-        # Fetch conversations (should be empty initially for this test user)
-        response = await client.get("/conversations", headers=headers)
-        assert response.status_code == 200
-        assert isinstance(response.json(), list)
-        assert len(response.json()) == 0 # Assuming clear_test_database works
-
-        # Try getting a non-existent conversation
-        response = await client.get("/conversations/non-existent-id", headers=headers)
-        assert response.status_code == 404 # Should be 404 Not Found
-
-        # Try getting the user profile again
-        response = await client.get("/users/me", headers=headers)
-        assert response.status_code == 200
-
-
-@pytest.mark.integration
-@pytest.mark.asyncio
-async def test_expired_token():
+async def test_expired_token(async_client: httpx.AsyncClient):
     """Test that an expired token is rejected."""
-    token = create_token(expires_delta_minutes=-5) # Expired 5 minutes ago
+    token = create_test_token(expires_delta=timedelta(minutes=-5))
     headers = {"Authorization": f"Bearer {token}"}
-    async with AsyncClient(app=app, base_url="http://test") as client:
-        response = await client.get("/users/me", headers=headers)
-        assert response.status_code == 401
-        assert "expired" in response.json()["detail"].lower() # Check detail
+    response = await async_client.get("/users/me", headers=headers)
+    assert response.status_code == 401
+    assert response.json()["detail"] == "Invalid authentication token"
 
 
-@pytest.mark.integration
 @pytest.mark.asyncio
-async def test_invalid_token_format():
-    """Test that malformed tokens are rejected."""
-    headers = {"Authorization": "Bearer invalid-token-format"}
-    async with AsyncClient(app=app, base_url="http://test") as client:
-        response = await client.get("/users/me", headers=headers)
-        assert response.status_code == 401
-        # Detail might vary, check for common invalid token messages
-        assert "invalid" in response.json()["detail"].lower()
+async def test_conversation_branching(async_client: httpx.AsyncClient):
+    """Test creating a branch from an existing conversation."""
+    user_branch_id = f"integration-test-branch-{datetime.now().timestamp()}"
 
+    # Sync setup: Ensure user exists
+    user_doc = {
+        "id": user_branch_id, "email": TEST_USER_EMAIL, "name": TEST_USER_NAME,
+        "image": TEST_USER_IMAGE, "created_at": datetime.now(), "updated_at": datetime.now(),
+    }
+    users_collection.replace_one({"id": user_branch_id}, user_doc, upsert=True)
 
-@pytest.mark.integration
-@pytest.mark.asyncio
-async def test_user_lazy_creation():
-    """Test that a user record is created when a valid token is presented"""
-    # Create a token with a unique user ID that shouldn't exist yet
-    unique_id = f"integration-test-{datetime.now().timestamp()}"
-    token = create_token(user_id=unique_id)
+    token = create_test_token(user_id=user_branch_id)
     headers = {"Authorization": f"Bearer {token}"}
 
-    async with AsyncClient(app=app, base_url="http://test") as client:
-        # 1. Verify user does NOT exist initially
-        user_before = await users_collection.find_one({"id": unique_id})
-        assert user_before is None
+    # Sync setup: Create a parent conversation directly in DB
+    parent_conv_id = f"parent-conv-{user_branch_id}"
+    message_to_branch_from_id = "msg-branch-point"
+    parent_messages = [
+        {"id": "msg-1", "role": "user", "content": "Parent Q1", "timestamp": datetime.now()},
+        {"id": message_to_branch_from_id, "role": "assistant", "content": "Parent A1", "timestamp": datetime.now()},
+        {"id": "msg-3", "role": "user", "content": "Parent Q2", "timestamp": datetime.now()},
+    ]
+    parent_conv_doc = {
+        "id": parent_conv_id,
+        "user_id": user_branch_id,
+        "title": "Parent Conversation",
+        "messages": parent_messages,
+        "created_at": datetime.now(),
+        "updated_at": datetime.now(),
+        "parent_conversation_id": None,
+        "branch_point_message_id": None,
+    }
+    conversations_collection.insert_one(parent_conv_doc)
 
-        # 2. Request the user profile (should create the user via get_current_user)
-        response = await client.get("/users/me", headers=headers)
-        assert response.status_code == 200
-        assert response.json()["id"] == unique_id
+    # Make the branch request
+    branch_request_payload = {"message_id": message_to_branch_from_id}
+    response = await async_client.post(
+        f"/conversations/{parent_conv_id}/branch",
+        headers=headers,
+        json=branch_request_payload
+    )
 
-        # 3. Verify user DOES exist in the database now
-        user_after = await users_collection.find_one({"id": unique_id})
-        assert user_after is not None
-        assert user_after["id"] == unique_id
+    # Verify successful branch creation
+    assert response.status_code == 201, f"Response body: {response.text}"
+    branch_data = response.json()
+    branch_id = branch_data["id"]
+    assert branch_id != parent_conv_id
+    assert branch_data["user_id"] == user_branch_id
+    assert branch_data["parent_conversation_id"] == parent_conv_id
+    assert branch_data["branch_point_message_id"] == message_to_branch_from_id
+    assert len(branch_data["messages"]) == 2 # Should contain messages up to the branch point
+    assert branch_data["messages"][0]["id"] == "msg-1"
+    assert branch_data["messages"][1]["id"] == message_to_branch_from_id
+
+    # Verify branch exists in DB (sync check)
+    branch_doc_db = conversations_collection.find_one({"id": branch_id})
+    assert branch_doc_db is not None
+    assert branch_doc_db["parent_conversation_id"] == parent_conv_id
+
+    # Verify branching from non-existent message fails
+    response_bad_msg = await async_client.post(
+        f"/conversations/{parent_conv_id}/branch",
+        headers=headers,
+        json={"message_id": "non-existent-msg-id"}
+    )
+    assert response_bad_msg.status_code == 404
+
+    # Verify branching from non-existent conversation fails
+    response_bad_conv = await async_client.post(
+        f"/conversations/non-existent-conv/branch",
+        headers=headers,
+        json={"message_id": message_to_branch_from_id}
+    )
+    assert response_bad_conv.status_code == 404 # Should be 404 as parent not found

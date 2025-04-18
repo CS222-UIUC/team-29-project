@@ -17,8 +17,8 @@ export async function apiClient(
   };
   
   // Add the JWT token as a Bearer token if available
-  if (session?.accessToken) {
-    headers["Authorization"] = `Bearer ${session.accessToken}`;
+  if (session?.backendToken) {
+    (headers as Record<string, string>)["Authorization"] = `Bearer ${session.backendToken}`;
   }
   
   // Construct the full API URL (relative URLs will be handled by Next.js API routes)

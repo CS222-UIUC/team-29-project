@@ -60,7 +60,7 @@ The application uses a structured logging system with the following features:
 - Log format: timestamp, logger name, level, file:line, message
 - Log location: `logs/threadflow.log`
 - Log rotation: 10MB file size with 5 backup files
-- Console output: INFO level and above 
+- Console output: INFO level and above
 - File output: DEBUG level and above
 
 To view logs in development:

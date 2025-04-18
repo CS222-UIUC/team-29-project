@@ -10,9 +10,9 @@ export default function Home() {
   const { data: session, status } = useSession();
 
   useEffect(() => {
-    fetch('/api/health')
-      .then(response => response.json())
-      .then(data => {
+    fetch("/api/health")
+      .then((response) => response.json())
+      .then((data) => {
         setApiStatus(data.status || "Online");
         setStatusClass("text-green-500 font-bold");
       })
@@ -27,7 +27,7 @@ export default function Home() {
       <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
         <h1 className="text-4xl font-bold">ThreadFlow</h1>
         <p className="text-xl mb-6">A branching chat interface for LLMs</p>
-        
+
         <div className="p-4 bg-black/[.05] dark:bg-white/[.06] rounded-lg mb-6">
           <p>
             API Status: <span className={statusClass}>{apiStatus}</span>
@@ -50,7 +50,10 @@ export default function Home() {
             </div>
           ) : (
             <button
-              onClick={(e) => {e.preventDefault();signIn("google", { callbackUrl: "/" })}}
+              onClick={(e) => {
+                e.preventDefault();
+                signIn("google", { callbackUrl: "/" });
+              }}
               className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-blue-500 text-white gap-2 hover:bg-blue-600 text-sm h-10 px-4"
             >
               Sign in with Google

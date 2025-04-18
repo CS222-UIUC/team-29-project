@@ -11,7 +11,7 @@ jobs:
   build:
 
     runs-on: ubuntu-latest
-    
+
     env:
       NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET }}
       GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
@@ -22,9 +22,9 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
-    
+
     - name: Build the backend Docker image
       run: docker build ./backend --file backend/Dockerfile --tag threadflow-backend:$(date +%s)
-    
+
     - name: Build the frontend Docker image
       run: docker build ./frontend --file frontend/Dockerfile --target production --tag threadflow-frontend:$(date +%s)

@@ -21,7 +21,7 @@ services:
 
   # Frontend service
   frontend:
-    build: 
+    build:
       context: ./frontend
       target: development
     ports:

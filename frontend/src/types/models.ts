@@ -32,12 +32,12 @@ export type Conversation = {
 };
 
 // Metadata for a conversation (excluding messages), used for lists/trees
-export type ConversationMetadata = Omit<Conversation, 'messages'>;
+export type ConversationMetadata = Omit<Conversation, "messages">;
 
 // Response type from the modified POST /chat endpoint
 export type ChatApiResponse = {
-    response: string;
-    conversation_id: string;
-    user_message_id: string;
-    assistant_message_id: string;
+  response: string;
+  conversation_id: string;
+  user_message_id: string;
+  assistant_message_id: string;
 };

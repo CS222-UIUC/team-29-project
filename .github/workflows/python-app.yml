@@ -14,34 +14,34 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
-    
+
     - name: Set up Python 3.10
       uses: actions/setup-python@v3
       with:
         python-version: "3.10"
-    
+
     - name: Install system dependencies
       run: |
         sudo apt-get update
         sudo apt-get install -y libffi-dev
-    
+
     - name: Install and configure Poetry
       uses: snok/install-poetry@v1
       with:
         version: 1.7.1
         virtualenvs-create: true
         virtualenvs-in-project: true
-    
+
     - name: Install dependencies
       working-directory: ./backend
       run: poetry install --no-interaction
-    
+
     - name: Check code formatting and linting with Ruff
       working-directory: ./backend
       run: |
         poetry run ruff check .
         poetry run ruff format . --check
-    
+
     - name: Run standard tests
       env:
         OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
@@ -50,7 +50,7 @@ jobs:
         JWT_SECRET: ${{ secrets.JWT_SECRET || 'test_secret_key' }}
       working-directory: ./backend
       run: poetry run pytest -v -m "not security and not integration"
-      
+
     - name: Run security tests
       if: github.event_name == 'pull_request' || github.ref == 'refs/heads/main'
       env:
@@ -60,7 +60,7 @@ jobs:
         JWT_SECRET: ${{ secrets.JWT_SECRET || 'test_secret_key' }}
       working-directory: ./backend
       run: poetry run pytest -v -m "security"
-      
+
     # --- Integration Tests ---
     # Run only on main branch, requires docker-compose to bring up DB
     - name: Run integration tests
@@ -87,7 +87,7 @@ jobs:
         sleep 55
 
         echo "Running integration tests inside the backend container..."
-        
+
         # -T disables pseudo-tty allocation, good for CI
         docker compose exec -T backend poetry run pytest -v -m "integration" || docker-compose exec -T backend poetry run pytest -v -m "integration"
 

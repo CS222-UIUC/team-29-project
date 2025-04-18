@@ -1,7 +1,7 @@
 import NextAuth from "next-auth";
 import type { NextAuthOptions } from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
-import { jwtVerify, SignJWT } from 'jose';
+import { SignJWT } from "jose";
 
 // Environment variables should be properly set in .env file
 const jwtSecret = process.env.NEXTAUTH_SECRET;
@@ -9,7 +9,9 @@ const secretKey = new TextEncoder().encode(jwtSecret);
 const algorithm = "HS256";
 
 if (!jwtSecret) {
-  console.error("FATAL ERROR: NEXTAUTH_SECRET environment variable is not set.");
+  console.error(
+    "FATAL ERROR: NEXTAUTH_SECRET environment variable is not set.",
+  );
 }
 
 // 1. Configure NextAuth options
@@ -56,8 +58,11 @@ export const authOptions: NextAuthOptions = {
         };
 
         try {
-           // Use the 'exp' from the original NextAuth token if available
-          const expirationTime = typeof token.exp === 'number' ? token.exp : Math.floor(Date.now() / 1000) + (30 * 24 * 60 * 60); // Fallback: 30 days exp
+          // Use the 'exp' from the original NextAuth token if available
+          const expirationTime =
+            typeof token.exp === "number"
+              ? token.exp
+              : Math.floor(Date.now() / 1000) + 30 * 24 * 60 * 60; // Fallback: 30 days exp
 
           const backendJwt = await new SignJWT(backendPayload)
             .setProtectedHeader({ alg: algorithm })
@@ -67,19 +72,25 @@ export const authOptions: NextAuthOptions = {
 
           // Add this backend-specific JWT to the session object
           session.backendToken = backendJwt; // Use this token for backend calls
-
         } catch (error) {
-             console.error("Error signing backend JWT:", error);
-             // Handle error: maybe return session without backendToken?
+          console.error("Error signing backend JWT:", error);
+          // Handle error: maybe return session without backendToken?
         }
-
 
         // Also add user details to the session object for client-side use
         if (session.user) {
-          session.user.id = typeof token.id === 'string' ? token.id : typeof token.sub === 'string' ? token.sub : undefined;
-          session.user.name = typeof token.name === 'string' ? token.name : undefined;
-          session.user.email = typeof token.email === 'string' ? token.email : undefined;
-          session.user.image = typeof token.picture === 'string' ? token.picture : undefined;
+          session.user.id =
+            typeof token.id === "string"
+              ? token.id
+              : typeof token.sub === "string"
+                ? token.sub
+                : undefined;
+          session.user.name =
+            typeof token.name === "string" ? token.name : undefined;
+          session.user.email =
+            typeof token.email === "string" ? token.email : undefined;
+          session.user.image =
+            typeof token.picture === "string" ? token.picture : undefined;
         }
       }
       // **Important:** Do NOT send the Google access token to the client session
@@ -89,8 +100,8 @@ export const authOptions: NextAuthOptions = {
     },
   },
   pages: {
-    signIn: '/auth/signin',
-    error: '/auth/error',
+    signIn: "/auth/signin",
+    error: "/auth/error",
   },
 };
 

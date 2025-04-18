@@ -1,4 +1,4 @@
-import { ModelsResponse } from '../types/models';
+import { ModelsResponse } from "../types/models";
 
 /**
  * Finds the best available model for a given provider
@@ -8,29 +8,31 @@ import { ModelsResponse } from '../types/models';
  */
 export function findBestModelForProvider(
   models: ModelsResponse | null,
-  provider: string
+  provider: string,
 ): string | undefined {
   if (!models || !models[provider]?.models.length) {
     return undefined;
   }
-  
+
   // Special handling for different providers
-  if (provider === 'anthropic') {
+  if (provider === "anthropic") {
     // Prefer Claude 3.7 Sonnet
-    const claude37 = models[provider].models.find(m => m.id === 'claude-3-7-sonnet-20250219');
+    const claude37 = models[provider].models.find(
+      (m) => m.id === "claude-3-7-sonnet-20250219",
+    );
     if (claude37) return claude37.id;
-  }
-  else if (provider === 'google') {
+  } else if (provider === "google") {
     // Prefer Gemini 2.5 Pro
-    const gemini25 = models[provider].models.find(m => m.id === 'gemini-2.5-pro-exp-03-25');
+    const gemini25 = models[provider].models.find(
+      (m) => m.id === "gemini-2.5-pro-exp-03-25",
+    );
     if (gemini25) return gemini25.id;
-  }
-  else if (provider === 'openai') {
+  } else if (provider === "openai") {
     // Prefer GPT-4o
-    const gpt4o = models[provider].models.find(m => m.id === 'gpt-4o');
+    const gpt4o = models[provider].models.find((m) => m.id === "gpt-4o");
     if (gpt4o) return gpt4o.id;
   }
-  
+
   // Default to first model
   return models[provider].models[0].id;
 }
@@ -45,12 +47,12 @@ export function findBestModelForProvider(
 export function getModelDescription(
   models: ModelsResponse | null,
   provider: string,
-  modelId: string
+  modelId: string,
 ): string {
-  if (!models || !models[provider]) return '';
-  
-  const model = models[provider].models.find(m => m.id === modelId);
-  return model?.description || '';
+  if (!models || !models[provider]) return "";
+
+  const model = models[provider].models.find((m) => m.id === modelId);
+  return model?.description || "";
 }
 
 /**
@@ -61,7 +63,9 @@ export function getModelDescription(
  */
 export function isProviderAvailable(
   models: ModelsResponse | null,
-  provider: string
+  provider: string,
 ): boolean {
-  return Boolean(models?.[provider]?.available && models[provider].models.length > 0);
+  return Boolean(
+    models?.[provider]?.available && models[provider].models.length > 0,
+  );
 }

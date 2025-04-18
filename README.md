@@ -9,12 +9,25 @@ ThreadFlow is a modern chat application that supports multiple AI models from di
    - Node.js 20.x
    - Python 3.10
    - Git
+   - Pre-commit (installed automatically with backend dev dependencies)
 
 2. **Clone the repository**
    ```bash
    git clone https://github.com/your-username/ThreadFlow.git
    cd ThreadFlow
-3. Set up environment variables
+   ```
+
+3. **Set up pre-commit hooks**
+   ```bash
+   # Install backend dependencies including pre-commit
+   cd backend
+   poetry install --with dev
+   # Install the pre-commit hooks (run from project root)
+   cd ..
+   poetry -C backend run pre-commit install
+   ```
+
+4. **Set up environment variables
 Create a .env file in the project root:
 ```bash
 # Required

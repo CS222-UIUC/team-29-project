@@ -1,51 +1,125 @@
 # ThreadFlow Frontend
 
-A Next.js 15 application with React 19 for the ThreadFlow chat interface.
+A modern, friendly chat interface built with Next.js 15 and React 19.
 
-## Features
+## ✨ What's included
 
-- Modern, responsive UI built with Next.js and Tailwind CSS
-- Multiple AI model selection from different providers:
+- **Beautiful UI** built with Next.js and Tailwind CSS
+- **Multiple AI models** at your fingertips:
   - Google's Gemini models
   - Anthropic's Claude models
   - OpenAI's GPT models
-- Real-time model availability detection
-- Error handling and timeout management
+- **Smart model detection** - only shows what's available
+- **Robust error handling** so things don't break
 
-## Getting Started
+## 🏗️ Technical Architecture
 
-First, run the development server:
+The ThreadFlow frontend is built with modern web technologies for a responsive, accessible user experience:
+
+### Core Technologies
+
+- **Next.js 15**: React framework with built-in routing and server components
+- **React 19**: Component-based UI library with concurrent rendering
+- **Tailwind CSS**: Utility-first CSS framework for consistent styling
+- **TypeScript**: Static type checking for reliable code
+
+### Key Features
+
+- **Model Switching**: Seamlessly change between different AI providers
+- **Conversation History**: Maintain chat history across model switches
+- **Responsive Design**: Works on desktop, tablet, and mobile devices
+- **Authentication**: Secure login with NextAuth.js
+- **Error Boundaries**: Graceful handling of API failures
+
+### State Management
+
+- React Context API for application state
+- Custom hooks for shared logic
+- Type-safe data handling with TypeScript interfaces
+
+## 🚀 Installation and Setup
+
+### Prerequisites
+
+- Node.js 20.x+
+- npm or yarn
+
+### Environment Setup
+
+Create a `.env.local` file with:
+
+```
+NEXT_PUBLIC_API_URL=http://localhost:8000
+```
+
+### Development Server
+
+Run the development server:
 
 ```bash
+npm install
 npm run dev
 ```
 
-Or with Docker (recommended for full-stack development):
+Or use Docker (recommended for the full experience):
 
 ```bash
 DOCKER_BUILDKIT=1 docker-compose up --build
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-## Development Notes
+## 🧩 Project Structure
 
-- The chat interface is implemented in `src/app/chat/page.tsx`
-- API calls are made to the backend at `http://localhost:8000`
-- The frontend automatically detects which models are available based on API keys configured in the backend
+```
+frontend/
+├── src/
+│   ├── app/              # Next.js app directory
+│   │   ├── chat/         # Chat page components
+│   │   ├── auth/         # Authentication pages
+│   │   └── layout.tsx    # Root layout component
+│   ├── __tests__/        # Test files
+│   ├── types/            # TypeScript type definitions
+│   └── utils/            # Utility functions and helpers
+│       ├── apiClient.ts  # API communication
+│       └── modelUtils.ts # Model handling logic
+```
 
-## Environment Variables
+## 🧪 Testing
 
-- `NEXT_PUBLIC_API_URL`: Backend API URL (defaults to http://backend:8000 in Docker)
+We use Jest and React Testing Library for thorough testing:
 
-## Learn More
+- **Unit Tests**: For utility functions and hooks
+- **Component Tests**: For individual UI components
+- **Integration Tests**: For page interactions
+- **Mock Service Worker**: For API mocking
 
-To learn more about the technologies used:
+Run tests with:
 
-- [Next.js Documentation](https://nextjs.org/docs)
-- [React Documentation](https://react.dev)
-- [Tailwind CSS](https://tailwindcss.com/docs)
+```bash
+npm test
+```
 
-## Deploy on Vercel
+## 📱 Responsive Design
 
-The easiest way to deploy this Next.js app is to use the [Vercel Platform](https://vercel.com/new) from the creators of Next.js.
+ThreadFlow adapts to different screen sizes:
+
+- **Desktop**: Full-featured experience with side panels
+- **Tablet**: Optimized layout with collapsible sections
+- **Mobile**: Streamlined interface for on-the-go usage
+
+## 🚀 Deployment
+
+The frontend can be deployed as:
+
+- A static export to any hosting service
+- A serverless application on Vercel
+- A containerized app using our Docker configuration
+
+## 🔗 API Integration
+
+The frontend connects to our backend API using:
+
+- Fetch API for network requests
+- JWT authentication for secure communication
+- TypeScript interfaces for type-safe data handling

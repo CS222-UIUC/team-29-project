@@ -1,104 +1,184 @@
-# ThreadFlow - Multi-Model Chat Application
+# ThreadFlow
 
-ThreadFlow is a modern chat application that supports multiple AI models from different providers, giving users choice and flexibility in their AI interactions.
+ThreadFlow is a friendly chat application that connects you with the best AI models from Google, Anthropic, and OpenAI - all in one place. Switch between models seamlessly to find the perfect AI for your needs.
 
-## One-Time Setup
+![ThreadFlow](https://via.placeholder.com/800x400?text=ThreadFlow+Screenshot)
 
-1. **Install prerequisites**
-   - Docker & Docker Compose
-   - Node.js 20.x
-   - Python 3.10
-   - Git
-   - Pre-commit (installed automatically with backend dev dependencies)
+## 📝 Project Introduction
 
-2. **Clone the repository**
-   ```bash
-   git clone https://github.com/your-username/ThreadFlow.git
-   cd ThreadFlow
-   ```
+ThreadFlow is a unified chat interface for interacting with multiple AI models. Our project addresses the challenge of having to switch between different applications to access various AI models by bringing them all into one streamlined platform.
 
-3. **Set up pre-commit hooks**
-   ```bash
-   # Install backend dependencies including pre-commit
-   cd backend
-   poetry install --with dev
-   # Install the pre-commit hooks (run from project root)
-   cd ..
-   poetry -C backend run pre-commit install
-   ```
+With ThreadFlow, users can:
+- Seamlessly switch between models from Google, Anthropic, and OpenAI
+- Maintain conversation history across model switches
+- Experience a clean, intuitive interface designed for productive AI interactions
 
-4. **Set up environment variables
-Create a .env file in the project root:
+Our goal was to create a practical, user-friendly application that demonstrates effective API integration, secure authentication, and modern web development practices.
+
+## ✨ What can ThreadFlow do?
+
+- **Talk to multiple AI models** from different companies:
+  - Google's Gemini (2.5 Pro Experimental, 2.0 Flash, 2.0 Flash Lite, 1.5 Pro)
+  - Anthropic's Claude (3.7 Sonnet, 3.5 Sonnet v2, 3.5 Haiku)
+  - OpenAI's GPT-4o
+- **Smart interface** that only shows models you have access to
+- **Modern design** built with Next.js 15 and React 19
+- **Secure conversations** with proper authentication
+- **Reliable storage** using MongoDB
+
+## 🏗️ Technical Architecture
+
+ThreadFlow uses a modern full-stack architecture:
+
+### Frontend (Next.js + React)
+- **Framework**: Next.js 15 with React 19 for a responsive single-page application
+- **Authentication**: NextAuth.js with JWT for secure user sessions
+- **Styling**: Tailwind CSS for a clean, consistent UI
+- **State Management**: React Context API for application state
+- **Testing**: Jest and React Testing Library for component and integration tests
+
+### Backend (FastAPI + MongoDB)
+- **API Framework**: FastAPI for high-performance endpoints with automatic documentation
+- **Database**: MongoDB for flexible document storage of conversations and user data
+- **Authentication**: JWT-based token system with secure password hashing
+- **AI Integration**: Unified API clients for Google, Anthropic, and OpenAI services
+- **Logging**: Comprehensive logging system with rotation and different log levels
+
+### DevOps
+- **Containerization**: Docker and Docker Compose for consistent environments
+- **CI/CD**: GitHub Actions for automated testing and deployment
+- **Cloud Infrastructure**: Google Cloud Run for scalable containerized applications
+- **Secrets Management**: Secure handling of API keys and credentials
+
+## 🚀 Installation Guide
+
+### Prerequisites
+- Docker & Docker Compose (easiest way to run everything)
+- Node.js 20.x (if you want to work on just the frontend)
+- Python 3.10 (if you want to work on just the backend)
+- Git
+
+### Step 1: Clone the Repository
 ```bash
-# Required
-JWT_SECRET=dev_secret_key
-MONGODB_URI=mongodb+srv://<db_username>:<db_password>@threadflow.fazim.mongodb.net/?retryWrites=true&w=majority&appName=ThreadFlow
+git clone https://github.com/your-username/ThreadFlow.git
+cd ThreadFlow
+```
 
-# AI Model API Keys (at least one is needed)
+### Step 2: Set Up Environment Variables
+Create a `.env` file in the root directory:
+```
+# Required basics
+JWT_SECRET=pick_a_random_secret_key
+MONGODB_URI=mongodb://mongo:27017/threadflow
+
+# Add at least one AI model key
 GEMINI_API_KEY=your_gemini_api_key_here
 OPENAI_API_KEY=your_openai_api_key_here
 ANTHROPIC_API_KEY=your_anthropic_api_key_here
 ```
+> 💡 You need at least one valid AI key or the chat won't work!
 
-> Note: You need at least one valid API key to use the chat functionality. The system will only show models from providers with valid API keys.
+### Step 3: Start the Application
+Using Docker (recommended):
+```bash
+DOCKER_BUILDKIT=1 docker-compose up --build
+```
 
+The application will be available at:
+- Web app: http://localhost:3000
+- API documentation: http://localhost:8000/docs
 
-## Development Workflow
+### For Frontend-Only Development
+```bash
+cd frontend
+npm install
+npm run dev
+```
 
-1. **Start the local environment and build**
-   ```bash
-   DOCKER_BUILDKIT=1 docker-compose down
-   DOCKER_BUILDKIT=1 docker-compose up --build
-   ```
+### For Backend-Only Development
+```bash
+cd backend
+poetry install
+poetry run uvicorn app.main:app --reload
+```
 
-2. **Access the applications**
-   - Frontend: http://localhost:3000
-   - Backend API: http://localhost:8000
-   - API Docs: http://localhost:8000/docs
+## 👥 Team Members and Contributions
 
-3. **Supported AI Models**
-   - Google's Gemini models (2.5 Pro Experimental, 2.0 Flash, 2.0 Flash Lite, 1.5 Pro)
-   - Anthropic's Claude models (Claude 3.7 Sonnet, Claude 3.5 Sonnet v2, Claude 3.5 Haiku)
-   - OpenAI's GPT models (GPT-4o)
+### Vedaant
+**Role**: Backend Developer
+- Implemented FastAPI endpoints for chat functionality
+- Designed and implemented MongoDB schemas
+- Created unified AI model integration system
+- Set up Docker configuration for backend services
 
-3. **Making changes**
-   - Frontend code is in the `frontend/` directory
-   - Backend code is in the `backend/` directory
-   - Changes will hot-reload in development
+### Aditya
+**Role**: Backend Developer
+- Developed authentication and security systems
+- Created comprehensive logging infrastructure
+- Implemented health monitoring endpoints
+- Wrote backend tests and documentation
 
-## Branch Strategy
+### Shubhankar
+**Role**: Frontend Developer
+- Built the chat interface components
+- Implemented responsive design with Tailwind
+- Created frontend authentication flows
+- Developed error handling and notifications
 
-- `main`: Production code, no direct push allowed, only pull requests
-- Feature branches: Create from main, name as `feature/your-feature-name`
+### Dhruv
+**Role**: Frontend Developer
+- Implemented AI model switching functionality
+- Created conversation history components
+- Built frontend API client services
+- Set up frontend testing infrastructure
 
-## CI/CD Information
+### Collaborative Work
+- GitHub repository setup and organization
+- Integration between frontend and backend systems
+- Docker Compose configuration
+- Documentation and README files
 
-- GitHub Actions automatically test and build Docker images
-- Tests run for both frontend and backend
-- Current setup validates code but doesn't deploy yet
+## 📊 Watching what happens
 
+ThreadFlow has a great logging system that helps you see what's going on:
 
-## Infrastructure Overview
+- Real-time console output
+- Log files that don't get too big
+- Different log levels (DEBUG, INFO, WARNING, ERROR)
+- Detailed logs with timestamps
 
-1. **Google Cloud Project**: `threadflow-app`
-   - Enabled APIs: Cloud Run, Cloud Build, Secret Manager (update this along the way)
-   - Artifact Registry: `threadflow-repo` in `us-central1`
-   - Secrets: `mongodb-uri` and `jwt-secret` (already stored)
+How to check logs:
+- Look at the console output
+- Check `logs/threadflow.log`
+- Visit `GET /debug/logs?lines=100` in development
 
-2. **GitHub CI/CD**:
-   - Docker image build workflow
-   - Frontend Node.js testing
-   - Backend Python testing
+## 📝 Testing your changes
 
-3. **Future Deployment Path**:
-   1. Build Docker images (already happens via GitHub Actions)
-   2. Push to Google Artifact Registry (later)
-   3. Deploy to Cloud Run (later)
+We have tests to make sure everything works right:
 
-## Steps for Development
+- Backend tests: `backend/app/test_*.py`
+- Frontend tests: `frontend/src/__tests__/`
 
-1. Authenticate to Google Cloud:
-   ```bash
-   gcloud auth login
-   gcloud config set project threadflow-app
-   ```
+Run them locally:
+- Frontend: `cd frontend && npm test`
+- Backend: `cd backend && poetry run pytest`
+
+## 🔄 How we manage code
+
+- `main`: Production-ready code (protected - use pull requests only)
+- For new features: Create branches named `feature/your-feature-name`
+
+## 📚 Helpful resources
+
+- [FastAPI Documentation](https://fastapi.tiangolo.com/)
+- [Next.js Documentation](https://nextjs.org/docs)
+- [React Documentation](https://react.dev)
+- [MongoDB Documentation](https://docs.mongodb.com/)
+
+## 🤝 Want to help?
+
+We welcome contributions! Check out our [contributing guidelines](CONTRIBUTING.md).
+
+## 📄 License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
